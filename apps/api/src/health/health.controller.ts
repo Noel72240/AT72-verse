@@ -17,6 +17,8 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
+      build: "meta-scopes-public-profile-only",
+      meta_oauth_scopes: ["public_profile"],
     };
   }
 
@@ -28,7 +30,14 @@ export class HealthController {
       const organizations = await this.prisma.organization.count();
       const memberships = await this.prisma.membership.count();
       const packages = await this.prisma.package.count();
-      return { status: "ok", users, organizations, memberships, packages, build: "94910a8-nano" };
+      return {
+        status: "ok",
+        users,
+        organizations,
+        memberships,
+        packages,
+        build: "meta-scopes-public-profile-only",
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { status: "error", message };

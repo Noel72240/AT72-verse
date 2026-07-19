@@ -35,7 +35,7 @@ Without LinkedIn / Meta credentials, stub mode is automatic for that network.
 ## Meta notes
 
 - One Meta app covers Facebook + Instagram connect buttons.
-- **Connect (MVP):** scopes `public_profile` + `email` only — works with a Facebook Login use case in Development mode.
+- **Connect (MVP):** scope `public_profile` only — works with a Facebook Login use case in Development mode.
 - Page / Instagram publish scopes (`pages_*`, `instagram_*`, `business_management`) require adding those products in Meta and often App Review; they are not requested until live Graph publish ships.
 - Instagram content publishing later requires an **Instagram Business/Creator** account linked to a **Facebook Page**.
 - Add the same redirect URI in the Meta app settings as on Railway.
