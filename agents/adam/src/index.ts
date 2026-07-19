@@ -39,13 +39,64 @@ export const ADAM_PLANNER_SYSTEM = `You are Adam, the Verse orchestrator.
 Return ONLY a JSON object (no markdown) with this shape:
 {"mode":"campaign"|"single"|"none","delegate_to":"nova"|"orion"|"astra"|"pixel"|"none","targets":["nova","astra","pixel"],"brief":"<shared brief>","briefs":{"nova":"...","astra":"...","pixel":"..."},"summary":"<one-line plan>"}
 Rules:
+- Greetings, small talk, questions, help requests with no deliverable → mode "none" (NEVER campaign)
 - Full content campaign (article + SEO + visual) → mode "campaign" with targets nova,astra,pixel
 - Content / LinkedIn / post / article / writing only → mode "single", delegate_to "nova"
 - Analysis / data / insights → mode "single", delegate_to "orion"
 - SEO / audit / ranking alone → mode "single", delegate_to "astra"
 - Image / visual / design alone → mode "single", delegate_to "pixel"
 - Otherwise mode "none"
-- Choose at most one mode. Never invent other agents.`;
+- Choose at most one mode. Never invent other agents. Never use campaign for a greeting like "salut" or "hello".`;
+
+function isDirectChatGoal(goal: string): boolean {
+  const g = goal.trim().toLowerCase();
+  if (g.length <= 40) {
+    if (
+      /^(salut|bonjour|bonsoir|hello|hi|hey|coucou|yo|slt|wesh|ça va|ca va|merci|thanks|ok|allor|alors|ah|test)[\s!?.]*$/i.test(
+        g,
+      )
+    ) {
+      return true;
+    }
+  }
+  // Short messages without a clear specialist deliverable → chat, not campaign.
+  if (
+    g.length <= 24 &&
+    !/(post|poste|linkedin|article|seo|image|campagne|campaign|rédige|redige|write|analyse)/i.test(g)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function directChatReply(
+  ctx: AdamHandleTaskContext,
+  goal: string,
+  resolved: ResolvedPersona,
+): Promise<AdamHandleTaskResult> {
+  const plan: AgentPlan = {
+    version: "1",
+    steps: [{ name: "direct_reply", kind: "act", agent_id: ADAM_AGENT_ID }],
+  };
+  const reply = await ctx.kernel.llm.complete({
+    profile: "fast-cheap",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Tu es Adam, orchestrateur d'AT72 Verse. Réponds à l'utilisateur de façon claire et utile, dans sa langue. Sois concis et amical.",
+      },
+      { role: "user", content: goal },
+    ],
+  });
+  return {
+    plan,
+    result: {
+      content: reply.content?.trim() || "Salut ! Comment puis-je t'aider ?",
+    },
+    resolved_persona: resolved,
+  };
+}
 
 export type AdamHandleTaskContext = {
   kernel: KernelClient;
@@ -176,6 +227,21 @@ function briefFor(
   return fallbackGoal;
 }
 
+function extractTextFromUnknown(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (!value || typeof value !== "object") return null;
+  const obj = value as Record<string, unknown>;
+  for (const key of ["content", "text", "message", "reply", "output"] as const) {
+    const v = obj[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  for (const nested of Object.values(obj)) {
+    const found = extractTextFromUnknown(nested);
+    if (found) return found;
+  }
+  return null;
+}
+
 /**
  * Minimal agent entrypoint. Plans with LLM; may await one or many specialists.
  */
@@ -193,6 +259,11 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
       ? payload.goal.trim()
       : "No goal provided.";
 
+  // Chat / greetings must never fan-out to a campaign (LLM planner is over-eager).
+  if (isDirectChatGoal(goal)) {
+    return directChatReply(ctx, goal, resolved);
+  }
+
   const completion = await ctx.kernel.llm.complete({
     profile: "orchestrate-precise",
     messages: [
@@ -201,7 +272,11 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
     ],
   });
 
-  const llmPlan = parseAdamLlmPlan(completion.content, goal);
+  let llmPlan = parseAdamLlmPlan(completion.content, goal);
+  // Safety net: never campaign on tiny goals even if the planner misfires.
+  if (llmPlan.mode === "campaign" && goal.trim().length < 48) {
+    llmPlan = { mode: "none", delegate_to: "none", summary: "Prefer direct reply for short goal" };
+  }
   const plan = buildAdamPlan(llmPlan);
 
   await ctx.kernel.events.emit("agent.adam.plan.ready", {
@@ -242,15 +317,26 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
       throw new Error(failed.error ?? "Campaign specialist failed");
     }
 
-    // DR3 — deterministic aggregate keyed by target order
+    // DR3 — deterministic aggregate keyed by target order + chat-readable content
     const aggregate: Record<string, unknown> = {};
+    const parts: string[] = [];
     for (let i = 0; i < targets.length; i++) {
-      aggregate[targets[i]!] = many.results[i]?.result ?? null;
+      const target = targets[i]!;
+      const specialistResult = many.results[i]?.result ?? null;
+      aggregate[target] = specialistResult;
+      const text = extractTextFromUnknown(specialistResult);
+      if (text) parts.push(`### ${target}\n${text}`);
     }
 
     return {
       plan,
-      result: aggregate,
+      result: {
+        ...aggregate,
+        content:
+          parts.join("\n\n").trim() ||
+          llmPlan.summary ||
+          "Campagne terminée (pas de contenu textuel retourné).",
+      },
       resolved_persona: resolved,
     };
   }

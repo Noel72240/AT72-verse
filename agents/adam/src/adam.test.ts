@@ -130,9 +130,32 @@ describe("agent-adam Phase 15/24", () => {
       message: messageWithGoal("Campagne article + SEO + image pour le lancement"),
     });
     assert.equal(out.plan.steps.filter((s) => s.kind === "delegate").length, 3);
-    assert.deepEqual(Object.keys(out.result ?? {}), ["nova", "astra", "pixel"]);
+    assert.ok(out.result?.content);
     assert.equal((out.result?.nova as { target_agent?: string })?.target_agent, "nova");
     assert.equal((out.result?.astra as { target_agent?: string })?.target_agent, "astra");
     assert.equal((out.result?.pixel as { target_agent?: string })?.target_agent, "pixel");
+  });
+
+  it("handleTask replies directly for greetings (no campaign)", async () => {
+    const kernel = createKernelClient({
+      context: {
+        run_id: "11111111-1111-4111-8111-111111111111",
+        agent_id: "adam",
+        organization_id: "22222222-2222-4222-8222-222222222222",
+        workspace_id: "33333333-3333-4333-8333-333333333333",
+        trace_id: "55555555-5555-4555-8555-555555555555",
+        step_id: "44444444-4444-4444-8444-444444444444",
+      },
+      backend: "stub",
+    });
+
+    const out = await handleTask({
+      kernel,
+      message: messageWithGoal("salut"),
+    });
+    assert.ok(out.plan.steps.some((s) => s.name === "direct_reply"));
+    assert.ok(!out.plan.steps.some((s) => s.kind === "delegate"));
+    assert.equal(typeof out.result?.content, "string");
+    assert.ok(String(out.result?.content).length > 0);
   });
 });
