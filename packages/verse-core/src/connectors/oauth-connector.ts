@@ -345,12 +345,13 @@ export class OAuthConnector {
     selected_page_id: string | null;
     selected_page_name: string | null;
     pages: Array<{ id: string; name: string; has_instagram: boolean }>;
+    pages_diagnostic?: string | null;
   }> {
     const row =
       (await this.store.getByWorkspaceProvider(input.workspace_id, "facebook")) ??
       (await this.store.getByWorkspaceProvider(input.workspace_id, "instagram"));
     if (!row || row.status !== "connected") {
-      return { selected_page_id: null, selected_page_name: null, pages: [] };
+      return { selected_page_id: null, selected_page_name: null, pages: [], pages_diagnostic: null };
     }
     const plaintext = await this.vault.get({
       organization_id: row.organization_id,
@@ -358,21 +359,28 @@ export class OAuthConnector {
       ref: row.vault_ref,
     });
     if (!plaintext) {
-      return { selected_page_id: null, selected_page_name: null, pages: [] };
+      return { selected_page_id: null, selected_page_name: null, pages: [], pages_diagnostic: null };
     }
     let bundle = parseTokenBundle(plaintext);
+    let pages_diagnostic: string | null = null;
 
-    // OAuth sometimes stores user hint before Pages resolve — refresh from Graph.
+    // Always refresh when no usable Pages — OAuth may have stored user-only token.
     if (!bundle.meta_pages?.length && bundle.access_token) {
       try {
         const { fetchMetaPagesForToken } = await import("./meta-oauth-provider.js");
-        const pageFields = await fetchMetaPagesForToken(bundle.access_token);
-        if (pageFields.meta_pages?.length) {
+        const runtime = this.runtimes.get("facebook") ?? this.runtimes.get("instagram");
+        const pageFields = await fetchMetaPagesForToken(bundle.access_token, globalThis.fetch.bind(globalThis), {
+          app_id: runtime?.clientId,
+          app_secret: runtime?.clientSecret,
+        });
+        pages_diagnostic = pageFields.pages_diagnostic ?? null;
+        const { pages_diagnostic: _d, ...fields } = pageFields;
+        if (fields.meta_pages?.length || fields.access_token) {
           bundle = {
             ...bundle,
-            ...pageFields,
-            external_account_hint: pageFields.page_name
-              ? `Page ${pageFields.page_name}`
+            ...fields,
+            external_account_hint: fields.page_name
+              ? `Page ${fields.page_name}`
               : bundle.external_account_hint,
           };
           const providers: ConnectorProviderId[] = ["facebook", "instagram"];
@@ -394,8 +402,8 @@ export class OAuthConnector {
             }
           }
         }
-      } catch {
-        /* keep empty list — UI stays without picker */
+      } catch (e) {
+        pages_diagnostic = e instanceof Error ? e.message : String(e);
       }
     }
 
@@ -408,6 +416,7 @@ export class OAuthConnector {
       selected_page_id: bundle.page_id ?? null,
       selected_page_name: bundle.page_name ?? null,
       pages,
+      pages_diagnostic: pages.length ? null : pages_diagnostic,
     };
   }
 

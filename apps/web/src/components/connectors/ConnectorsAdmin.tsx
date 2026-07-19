@@ -50,6 +50,7 @@ export function ConnectorsAdmin() {
   const [metaPages, setMetaPages] = useState<ApiMetaPage[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedPageName, setSelectedPageName] = useState<string | null>(null);
+  const [pagesDiagnostic, setPagesDiagnostic] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -123,10 +124,12 @@ export function ConnectorsAdmin() {
         setMetaPages(pages.pages);
         setSelectedPageId(pages.selected_page_id);
         setSelectedPageName(pages.selected_page_name);
+        setPagesDiagnostic(pages.pages_diagnostic ?? null);
       } else {
         setMetaPages([]);
         setSelectedPageId(null);
         setSelectedPageName(null);
+        setPagesDiagnostic(null);
       }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
@@ -293,6 +296,10 @@ export function ConnectorsAdmin() {
             ))}
           </select>
         </section>
+      ) : pagesDiagnostic ? (
+        <p style={{ color: "var(--danger, #c44)", marginBottom: "1rem", fontSize: "0.9rem" }}>
+          Pages Meta introuvables : {pagesDiagnostic}. Déconnecte puis reconnecte Facebook.
+        </p>
       ) : null}
 
       {PROVIDERS.map((p) => {

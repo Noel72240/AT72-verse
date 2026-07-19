@@ -17,17 +17,36 @@ export type MetaPagePublic = {
 export async function fetchMetaPagesForToken(
   userAccessToken: string,
   fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
-): Promise<Partial<OAuthTokenBundle>> {
+  opts?: { app_id?: string; app_secret?: string },
+): Promise<Partial<OAuthTokenBundle> & { pages_diagnostic?: string }> {
+  let token = userAccessToken;
+
+  // Long-lived user token improves /me/accounts reliability.
+  if (opts?.app_id && opts?.app_secret) {
+    try {
+      const ex = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/oauth/access_token`);
+      ex.searchParams.set("grant_type", "fb_exchange_token");
+      ex.searchParams.set("client_id", opts.app_id);
+      ex.searchParams.set("client_secret", opts.app_secret);
+      ex.searchParams.set("fb_exchange_token", userAccessToken);
+      const exRes = await fetchImpl(ex.toString());
+      if (exRes.ok) {
+        const exJson = (await exRes.json()) as { access_token?: string };
+        if (exJson.access_token) token = exJson.access_token;
+      }
+    } catch {
+      /* keep short-lived */
+    }
+  }
+
   const u = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`);
   u.searchParams.set(
     "fields",
     "id,name,access_token,instagram_business_account{id}",
   );
-  u.searchParams.set("access_token", userAccessToken);
+  u.searchParams.set("limit", "100");
+  u.searchParams.set("access_token", token);
   const res = await fetchImpl(u.toString());
-  if (!res.ok) {
-    return {};
-  }
   const json = (await res.json()) as {
     data?: Array<{
       id?: string;
@@ -35,28 +54,88 @@ export async function fetchMetaPagesForToken(
       access_token?: string;
       instagram_business_account?: { id?: string };
     }>;
+    error?: { message?: string; code?: number; error_subcode?: number };
   };
-  const meta_pages = (json.data ?? [])
-    .filter((p) => p.id && p.name && p.access_token)
-    .map((p) => ({
-      id: p.id!,
-      name: p.name!,
-      access_token: p.access_token!,
+
+  if (!res.ok || json.error) {
+    const msg = json.error?.message ?? `Graph me/accounts HTTP ${res.status}`;
+    return { meta_pages: [], pages_diagnostic: msg, ...(token !== userAccessToken ? { access_token: token } : {}) };
+  }
+
+  const raw = json.data ?? [];
+  const meta_pages: NonNullable<OAuthTokenBundle["meta_pages"]> = [];
+
+  for (const p of raw) {
+    if (!p.id || !p.name) continue;
+    let pageToken = p.access_token;
+    if (!pageToken) {
+      try {
+        const pt = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${p.id}`);
+        pt.searchParams.set("fields", "access_token,instagram_business_account{id}");
+        pt.searchParams.set("access_token", token);
+        const ptRes = await fetchImpl(pt.toString());
+        if (ptRes.ok) {
+          const ptJson = (await ptRes.json()) as {
+            access_token?: string;
+            instagram_business_account?: { id?: string };
+          };
+          pageToken = ptJson.access_token;
+          if (!p.instagram_business_account && ptJson.instagram_business_account) {
+            p.instagram_business_account = ptJson.instagram_business_account;
+          }
+        }
+      } catch {
+        /* skip token fill */
+      }
+    }
+    if (!pageToken) continue;
+    meta_pages.push({
+      id: p.id,
+      name: p.name,
+      access_token: pageToken,
       ...(p.instagram_business_account?.id
         ? { ig_user_id: p.instagram_business_account.id }
         : {}),
-    }));
-  if (meta_pages.length === 0) return { meta_pages: [] };
+    });
+  }
+
+  const base: Partial<OAuthTokenBundle> & { pages_diagnostic?: string } = {
+    meta_pages,
+    ...(token !== userAccessToken ? { access_token: token } : {}),
+  };
+
+  if (meta_pages.length === 0) {
+    let pages_diagnostic = raw.length
+      ? `${raw.length} Page(s) listée(s) sans token (permissions Pages incomplètes)`
+      : "Aucune Page renvoyée par Meta (me/accounts vide)";
+    try {
+      const permUrl = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/me/permissions`);
+      permUrl.searchParams.set("access_token", token);
+      const permRes = await fetchImpl(permUrl.toString());
+      if (permRes.ok) {
+        const permJson = (await permRes.json()) as {
+          data?: Array<{ permission?: string; status?: string }>;
+        };
+        const granted = (permJson.data ?? [])
+          .filter((x) => x.status === "granted" && x.permission)
+          .map((x) => x.permission!);
+        pages_diagnostic += `. Permissions: ${granted.join(", ") || "(aucune)"}`;
+      }
+    } catch {
+      /* ignore */
+    }
+    return { ...base, pages_diagnostic };
+  }
 
   const preferred =
     meta_pages.find((p) => /allotech/i.test(p.name)) ??
     (meta_pages.length === 1 ? meta_pages[0] : undefined);
 
   if (!preferred) {
-    return { meta_pages };
+    return base;
   }
   return {
-    meta_pages,
+    ...base,
     page_id: preferred.id,
     page_name: preferred.name,
     page_access_token: preferred.access_token,
@@ -195,7 +274,7 @@ export class MetaOAuthProvider implements OAuthProviderPort {
     }
 
     let hint: string | undefined;
-    let pageFields: Partial<OAuthTokenBundle> = {};
+    let pageFields: Partial<OAuthTokenBundle> & { pages_diagnostic?: string } = {};
     try {
       const meRes = await this.fetchImpl(
         `https://graph.facebook.com/${GRAPH_VERSION}/me?fields=id,name&access_token=${encodeURIComponent(json.access_token)}`,
@@ -209,7 +288,13 @@ export class MetaOAuthProvider implements OAuthProviderPort {
     }
 
     try {
-      pageFields = await fetchMetaPagesForToken(json.access_token, this.fetchImpl);
+      pageFields = await fetchMetaPagesForToken(json.access_token, this.fetchImpl, {
+        app_id: input.client_id,
+        app_secret: input.client_secret,
+      });
+      if (pageFields.access_token) {
+        json.access_token = pageFields.access_token;
+      }
       if (pageFields.page_name) {
         hint = `Page ${pageFields.page_name}`;
       }
@@ -217,11 +302,12 @@ export class MetaOAuthProvider implements OAuthProviderPort {
       /* pages optional until permissions granted */
     }
 
+    const { pages_diagnostic: _diag, ...pageBundle } = pageFields;
     return {
       access_token: json.access_token,
       expires_in: json.expires_in,
       external_account_hint: hint ?? `meta-${this.provider}`,
-      ...pageFields,
+      ...pageBundle,
     };
   }
 

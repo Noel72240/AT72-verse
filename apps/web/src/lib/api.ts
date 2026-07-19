@@ -852,6 +852,7 @@ export async function listMetaPages(
   selected_page_id: string | null;
   selected_page_name: string | null;
   pages: ApiMetaPage[];
+  pages_diagnostic?: string | null;
 }> {
   return apiFetch(`/workspaces/${workspaceId}/connectors/meta/pages`);
 }
