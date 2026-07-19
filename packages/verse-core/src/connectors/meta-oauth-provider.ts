@@ -8,20 +8,10 @@ import type { OAuthProviderPort, OAuthTokenBundle } from "./linkedin-oauth-provi
 const GRAPH_VERSION = "v21.0";
 
 const META_SCOPES: Record<"facebook" | "instagram", readonly string[]> = {
-  facebook: [
-    "public_profile",
-    "pages_show_list",
-    "pages_manage_posts",
-    "pages_read_engagement",
-  ],
-  instagram: [
-    "public_profile",
-    "pages_show_list",
-    "pages_read_engagement",
-    "instagram_basic",
-    "instagram_content_publish",
-    "business_management",
-  ],
+  // Dev apps with Facebook Login only accept basic Login scopes until
+  // Pages / Instagram products + App Review are added in Meta dashboard.
+  facebook: ["public_profile", "email"],
+  instagram: ["public_profile", "email"],
 };
 
 export function metaScopesFor(provider: "facebook" | "instagram"): readonly string[] {
