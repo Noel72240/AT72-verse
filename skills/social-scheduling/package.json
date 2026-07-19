@@ -1,8 +1,8 @@
 {
-  "name": "@at72-verse/agent-echo",
+  "name": "@at72-verse/skill-social-scheduling",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent plugin: Echo (specialist, Phase 27a)",
+  "description": "Skill plugin: social-scheduling (Phase 27a)",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

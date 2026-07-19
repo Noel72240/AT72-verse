@@ -82,6 +82,8 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 25 validée ; Jalon **J15** atteint (Memory L4) ; post-J15 : pas d’accès métier à pgvector · sémantique via Kernel.memory only · swap moteur vectoriel sans Agents/Skills · embeddings = dérivés · kill-switch = textuel seul | Accepted | 2026-07-19 |
 | — | Phase 26 DT1–DT12 Accepted (+ amendement DT6 : checkpoints · resume manuel · états `paused`/`waiting_checkpoint` · **pas** de retry auto · Engine sans logique métier · nœuds futurs extensibles) | **Accepted** | 2026-07-19 |
 | — | Phase 26 validée ; Jalon **J16** atteint (First workflow) ; post-J16 : Engine = orchestrateur Core only · aucune Skill/Agent ne dépend du moteur · Agents = intelligence métier · futurs nœuds (condition/boucle/événement/attente/HITL) via handlers sans remise en cause | Accepted | 2026-07-19 |
+| — | Phase 27 DU1–DU13 Accepted (+ tools dry-run only · translation différée · Nyx storyboard mock · Persona→Skills→Kernel→Tools strict · sous-phases 27a→27b→27c · J17) · 27a en cours | **Accepted** | 2026-07-19 |
+| — | Phase **27a validée** (Pulse+Echo) ; dry-run only · Registry = enregistrement unique · pas de logique métier Runtime/Core/Host · **J17 non atteint** · 27b pack à valider avant code | Accepted | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |
 | ADR-009 | Polyglot Python runtime | Proposed | — |

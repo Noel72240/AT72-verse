@@ -2,7 +2,7 @@
 
 | # | Case | Expected |
 |---|------|----------|
-| 1 | Full first-party snapshot | adam / nova / orion / astra / pixel + skills/tools installed |
+| 1 | Full first-party snapshot | adam / nova / orion / astra / pixel / **pulse** / **echo** + skills/tools installed |
 | 2 | Exclude `pkg.nova` | `assertCapabilityInstalled(nova)` → FORBIDDEN |
 | 3 | Missing `packages_snapshot` | FORBIDDEN (`packages_snapshot_missing`) |
 | 4 | Direct Nova task without install | Runtime fails before `handleTask` |
@@ -14,5 +14,6 @@
 | 10 | `Kernel.registry.getAgent/Skill/Tool` | metadata from first-party catalog |
 | 11 | Exclude `pkg.orion` | Orion refused before handleTask (P23) |
 | 12 | Disable Orion grant | Orion refused (`agent_disabled`) |
+| 13 | Pulse + Echo installed (P27a) | social-scheduling / local-presence + dry-run tools |
 
-Automated by `package-install-gate.test.ts`, Runtime DP9/DQ10 cases, API package routes.
+Automated by `package-install-gate.test.ts`, Runtime DP9/DQ10/P27a cases, API package routes.

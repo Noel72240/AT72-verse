@@ -1,5 +1,24 @@
 ﻿{
   "id": "pulse",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Pulse",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Social scheduling specialist — plans via skill.social-scheduling only.",
+  "kind": "specialist",
+  "default_persona": "persona.pulse.default",
+  "skills": ["skill.social-scheduling"],
+  "tools_allowlist": ["social-publish"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "creative-balanced",
+  "can_consult": ["nova", "astra"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["social", "linkedin", "instagram", "post", "calendar"],
+    "priority": 50
+  }
 }

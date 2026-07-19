@@ -1,5 +1,6 @@
 ﻿{
   "id": "gmb-sync",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "version": "0.1.0",
+  "kind": "tool",
+  "package": "@at72-verse/tool-gmb-sync"
 }

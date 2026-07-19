@@ -1337,4 +1337,121 @@ describe("agent-runtime Phase 12/14/15", () => {
     assert.ok(done.completed_step_ids.includes("finalize"));
     await runtime.stop();
   });
+
+  it("Pulse completes social scheduling golden path with dry-run (Phase 27a)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-pulse",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111160";
+    const traceId = "55555555-5555-4555-8555-555555555610";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-pulse",
+          trace_id: traceId,
+          goal: "Planifier 3 posts LinkedIn pour le lancement Verse",
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("pulse") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("pulse"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as {
+      content?: string;
+      dry_run?: { mode?: string; would_publish?: boolean };
+    };
+    assert.equal(typeof result?.content, "string");
+    assert.equal(result?.dry_run?.mode, "dry_run");
+    assert.equal(result?.dry_run?.would_publish, true);
+    await runtime.stop();
+  });
+
+  it("Echo completes local presence golden path with dry-run (Phase 27a)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-echo",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111161";
+    const traceId = "55555555-5555-4555-8555-555555555611";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-echo",
+          trace_id: traceId,
+          goal: "Optimiser la fiche Google Business du magasin centre-ville",
+          place_id: "places/demo-store-1",
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("echo") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("echo"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as {
+      content?: string;
+      dry_run?: { mode?: string; would_sync?: boolean };
+    };
+    assert.equal(typeof result?.content, "string");
+    assert.equal(result?.dry_run?.mode, "dry_run");
+    assert.equal(result?.dry_run?.would_sync, true);
+    await runtime.stop();
+  });
 });

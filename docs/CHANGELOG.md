@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 27a — Pulse + Echo** — **validée PO (2026-07-19)** — lot 1/3 vers J17 (**J17 non atteint**)
+  - DU1–DU13 Accepted (+ dry-run only · translation différée · Persona→Skills→Kernel→Tools)
+  - Contracts `0.1.17` : seeds `pkg.pulse` / `pkg.echo` · skills · tools · grants
+  - Skills `skill.social-scheduling` · `skill.local-presence`
+  - Tools `social-publish` · `gmb-sync` en **dry-run** (`mode: "dry_run"`, zéro réseau)
+  - Agents Pulse/Echo + personas · Runtime Agent Registry only (pas de logique métier Runtime/Core/Host)
+  - Tests golden Pulse (`would_publish`) + Echo (`would_sync`) · Runtime/Core OK
+  - Contraintes : pas de live externe en P27 · archi Persona→Skills→Kernel→Tools · Registry = point unique d’enregistrement
+  - **Hors scope 27a :** 27b/27c · OAuth live · nouveaux workflows · translation · J17
 - **Phase 26 — Premier workflow déclaratif** — **validée PO (2026-07-19)** — **Jalon J16 atteint**
   - DT1–DT12 Accepted (+ amendement DT6 : checkpoints · resume manuel · `paused`/`waiting_checkpoint` · **pas** de retry auto · Engine sans logique métier · handlers extensibles) · `docs/workflows.md`
   - Contracts `0.1.16` : `WorkflowDefinition` / `WorkflowStepSpec` · statuses `waiting_checkpoint`/`paused` · seed `pkg.workflow.content-campaign`

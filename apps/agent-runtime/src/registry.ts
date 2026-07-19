@@ -13,9 +13,11 @@ import type {
 } from "@at72-verse/contracts";
 import { handleTask as adamHandleTask, ADAM_AGENT_ID } from "@at72-verse/agent-adam";
 import { handleTask as astraHandleTask, ASTRA_AGENT_ID } from "@at72-verse/agent-astra";
+import { handleTask as echoHandleTask, ECHO_AGENT_ID } from "@at72-verse/agent-echo";
 import { handleTask as novaHandleTask, NOVA_AGENT_ID } from "@at72-verse/agent-nova";
 import { handleTask as orionHandleTask, ORION_AGENT_ID } from "@at72-verse/agent-orion";
 import { handleTask as pixelHandleTask, PIXEL_AGENT_ID } from "@at72-verse/agent-pixel";
+import { handleTask as pulseHandleTask, PULSE_AGENT_ID } from "@at72-verse/agent-pulse";
 import {
   ANALYSIS_SKILL_SPEC,
   execute as analysisExecute,
@@ -27,10 +29,20 @@ import {
   SKILL_ID as IMAGE_GEN_SKILL_ID,
 } from "@at72-verse/skill-image-generation";
 import {
+  execute as localPresenceExecute,
+  LOCAL_PRESENCE_SKILL_SPEC,
+  SKILL_ID as LOCAL_PRESENCE_SKILL_ID,
+} from "@at72-verse/skill-local-presence";
+import {
   execute as seoExecute,
   SEO_SKILL_SPEC,
   SKILL_ID as SEO_SKILL_ID,
 } from "@at72-verse/skill-seo";
+import {
+  execute as socialSchedulingExecute,
+  SKILL_ID as SOCIAL_SCHEDULING_SKILL_ID,
+  SOCIAL_SCHEDULING_SKILL_SPEC,
+} from "@at72-verse/skill-social-scheduling";
 import {
   execute as writingExecute,
   SKILL_ID as WRITING_SKILL_ID,
@@ -42,6 +54,11 @@ import {
   FILE_READ_WRITE_TOOL_SPEC,
 } from "@at72-verse/tool-file-read-write";
 import {
+  execute as gmbSyncExecute,
+  GMB_SYNC_TOOL_SPEC,
+  TOOL_ID as GMB_SYNC_TOOL_ID,
+} from "@at72-verse/tool-gmb-sync";
+import {
   execute as imageGenToolExecute,
   IMAGE_GENERATE_TOOL_SPEC,
   TOOL_ID as IMAGE_GENERATE_TOOL_ID,
@@ -51,6 +68,11 @@ import {
   SEO_AUDIT_TOOL_SPEC,
   TOOL_ID as SEO_AUDIT_TOOL_ID,
 } from "@at72-verse/tool-seo-audit";
+import {
+  execute as socialPublishExecute,
+  SOCIAL_PUBLISH_TOOL_SPEC,
+  TOOL_ID as SOCIAL_PUBLISH_TOOL_ID,
+} from "@at72-verse/tool-social-publish";
 import {
   execute as webSearchExecute,
   TOOL_ID as WEB_SEARCH_TOOL_ID,
@@ -141,6 +163,24 @@ export function createDefaultAgentRegistry(): AgentRegistry {
         handleTask: pixelHandleTask,
       },
     ],
+    [
+      PULSE_AGENT_ID,
+      {
+        id: PULSE_AGENT_ID,
+        tools_allowlist: ["social-publish"],
+        can_consult: ["nova", "astra"],
+        handleTask: pulseHandleTask,
+      },
+    ],
+    [
+      ECHO_AGENT_ID,
+      {
+        id: ECHO_AGENT_ID,
+        tools_allowlist: ["gmb-sync"],
+        can_consult: ["astra"],
+        handleTask: echoHandleTask,
+      },
+    ],
   ]);
 }
 
@@ -182,6 +222,24 @@ export function createDefaultSkillRegistry(): SkillRegistry {
         execute: imageGenSkillExecute,
       },
     ],
+    [
+      SOCIAL_SCHEDULING_SKILL_ID,
+      {
+        id: SOCIAL_SCHEDULING_SKILL_ID,
+        version: SOCIAL_SCHEDULING_SKILL_SPEC.version,
+        spec: SOCIAL_SCHEDULING_SKILL_SPEC,
+        execute: socialSchedulingExecute,
+      },
+    ],
+    [
+      LOCAL_PRESENCE_SKILL_ID,
+      {
+        id: LOCAL_PRESENCE_SKILL_ID,
+        version: LOCAL_PRESENCE_SKILL_SPEC.version,
+        spec: LOCAL_PRESENCE_SKILL_SPEC,
+        execute: localPresenceExecute,
+      },
+    ],
   ]);
 }
 
@@ -221,6 +279,24 @@ export function createDefaultToolRegistry(): ToolRegistry {
         version: IMAGE_GENERATE_TOOL_SPEC.version,
         spec: IMAGE_GENERATE_TOOL_SPEC,
         execute: imageGenToolExecute,
+      },
+    ],
+    [
+      SOCIAL_PUBLISH_TOOL_ID,
+      {
+        id: SOCIAL_PUBLISH_TOOL_ID,
+        version: SOCIAL_PUBLISH_TOOL_SPEC.version,
+        spec: SOCIAL_PUBLISH_TOOL_SPEC,
+        execute: socialPublishExecute,
+      },
+    ],
+    [
+      GMB_SYNC_TOOL_ID,
+      {
+        id: GMB_SYNC_TOOL_ID,
+        version: GMB_SYNC_TOOL_SPEC.version,
+        spec: GMB_SYNC_TOOL_SPEC,
+        execute: gmbSyncExecute,
       },
     ],
   ]);

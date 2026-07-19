@@ -1,8 +1,8 @@
 {
   "name": "@at72-verse/agent-pulse",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Agent plugin: pulse",
+  "description": "Agent plugin: Pulse (specialist, Phase 27a)",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
@@ -10,11 +10,18 @@
   "scripts": {
     "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "tsc --noEmit -p tsconfig.json"
+    "build": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@at72-verse/contracts": "workspace:*",
+    "@at72-verse/verse-kernel": "workspace:*"
   },
   "devDependencies": {
     "@at72-verse/config-tsconfig": "workspace:*",
-    "typescript": "^5.7.3",
-    "eslint": "^9.18.0"
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   }
 }

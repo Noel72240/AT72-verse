@@ -1,0 +1,10 @@
+{
+  "id": "skill.social-scheduling",
+  "version": "0.1.0",
+  "name": "Social Scheduling",
+  "description": "Reusable social calendar / post planning via Kernel.",
+  "default_model_profile": "creative-balanced",
+  "tags": ["social", "scheduling"],
+  "eval_suite": "evals/social-scheduling-v0",
+  "permissions": ["skill.invoke:social-scheduling"]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "skill.local-presence",
+  "version": "0.1.0",
+  "name": "Local Presence",
+  "description": "Reusable local / Google Business presence via Kernel.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["local", "gmb"],
+  "eval_suite": "evals/local-presence-v0",
+  "permissions": ["skill.invoke:local-presence"]
+}

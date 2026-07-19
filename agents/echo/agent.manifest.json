@@ -1,5 +1,24 @@
 ﻿{
   "id": "echo",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Echo",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Local / Google Business specialist — via skill.local-presence only.",
+  "kind": "specialist",
+  "default_persona": "persona.echo.default",
+  "skills": ["skill.local-presence"],
+  "tools_allowlist": ["gmb-sync"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "can_consult": ["astra"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["gmb", "google business", "local", "avis", "fiche"],
+    "priority": 50
+  }
 }

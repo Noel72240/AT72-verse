@@ -482,11 +482,13 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Scope creep · intégrations réelles trop tôt |
 | **Critères de validation** | 12 agents listés/activables · 1 golden path chacun (même mocké) · registry coherent |
 | **Complexité** | **XL** |
+| **Statut** | **27a validée (2026-07-19)** — Pulse+Echo · **27b décisions à valider** · 27c non démarrée · **J17 non atteint** |
 
 > **Sous-phases recommandées :**  
 > **27a** Pulse+Echo (**L**) · **27b** Nexus+Vega (**L**) · **27c** Neo+Kira+Nyx (**L**)
 
-**Jalon J4 atteint — Multi-agent** : écosystème v1 utilisable en beta privée.
+> **Jalon proposé (DU12) :** **J17 — Catalogue agents v1** à la clôture de 27c (sous réserve Accept PO).  
+> **Post-J16 applicable :** Engine = orchestrateur only · Agents = métier · Skills indépendantes du moteur · handlers pour nœuds futurs.
 
 ---
 
