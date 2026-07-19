@@ -157,8 +157,16 @@ export class MetaOAuthProvider implements OAuthProviderPort {
     u.searchParams.set("client_id", input.client_id);
     u.searchParams.set("redirect_uri", input.redirect_uri);
     u.searchParams.set("state", input.state);
-    u.searchParams.set("scope", input.scopes.join(","));
     u.searchParams.set("response_type", "code");
+    // Facebook Login for Business: config_id carries permissions (preferred).
+    const configId = process.env.META_LOGIN_CONFIG_ID?.trim();
+    if (configId) {
+      u.searchParams.set("config_id", configId);
+    } else {
+      u.searchParams.set("scope", input.scopes.join(","));
+      // Re-prompt Page/IG scopes if previously granted only public_profile.
+      u.searchParams.set("auth_type", "rerequest");
+    }
     return u.toString();
   }
 

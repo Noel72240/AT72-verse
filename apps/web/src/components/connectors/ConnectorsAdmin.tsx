@@ -32,7 +32,7 @@ const PROVIDERS = [
   {
     id: "facebook" as const,
     label: "Facebook",
-    hint: "Publie sur la Page AlloTech72 (pas le mur perso de Léon). Reconnecte après avoir ajouté les permissions Pages dans Meta.",
+    hint: "Publie sur la Page AlloTech72 (pas le mur perso de Léon). Choisis la Page dans le menu ci-dessus si besoin.",
   },
   {
     id: "instagram" as const,

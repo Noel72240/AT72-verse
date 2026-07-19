@@ -17,7 +17,8 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
-      build: "meta-page-allotech72-publish",
+      build: "meta-login-config-id",
+      meta_login_config_id: Boolean(process.env.META_LOGIN_CONFIG_ID?.trim()),
       meta_oauth_scopes: [
         "public_profile",
         "pages_show_list",
@@ -43,7 +44,7 @@ export class HealthController {
         organizations,
         memberships,
         packages,
-        build: "meta-page-allotech72-publish",
+        build: "meta-login-config-id",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

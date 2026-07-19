@@ -338,7 +338,7 @@ export class OAuthConnector {
     return bundle.access_token;
   }
 
-  /** Public Page list (no tokens) for UI selection. */
+  /** Public Page list (no tokens) for UI selection. Re-fetches from Graph if vault has none. */
   async listMetaPages(input: {
     workspace_id: string;
   }): Promise<{
@@ -360,7 +360,45 @@ export class OAuthConnector {
     if (!plaintext) {
       return { selected_page_id: null, selected_page_name: null, pages: [] };
     }
-    const bundle = parseTokenBundle(plaintext);
+    let bundle = parseTokenBundle(plaintext);
+
+    // OAuth sometimes stores user hint before Pages resolve — refresh from Graph.
+    if (!bundle.meta_pages?.length && bundle.access_token) {
+      try {
+        const { fetchMetaPagesForToken } = await import("./meta-oauth-provider.js");
+        const pageFields = await fetchMetaPagesForToken(bundle.access_token);
+        if (pageFields.meta_pages?.length) {
+          bundle = {
+            ...bundle,
+            ...pageFields,
+            external_account_hint: pageFields.page_name
+              ? `Page ${pageFields.page_name}`
+              : bundle.external_account_hint,
+          };
+          const providers: ConnectorProviderId[] = ["facebook", "instagram"];
+          for (const provider of providers) {
+            const pRow = await this.store.getByWorkspaceProvider(input.workspace_id, provider);
+            if (!pRow || pRow.status !== "connected") continue;
+            await this.vault.put({
+              organization_id: pRow.organization_id,
+              workspace_id: pRow.workspace_id,
+              ref: pRow.vault_ref,
+              plaintext: serializeTokenBundle(bundle),
+            });
+            if (bundle.page_name) {
+              await this.store.upsert({
+                ...pRow,
+                external_account_hint: `Page ${bundle.page_name}`,
+                updated_at: new Date().toISOString(),
+              });
+            }
+          }
+        }
+      } catch {
+        /* keep empty list — UI stays without picker */
+      }
+    }
+
     const pages = (bundle.meta_pages ?? []).map((p) => ({
       id: p.id,
       name: p.name,
