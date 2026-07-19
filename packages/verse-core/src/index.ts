@@ -160,5 +160,12 @@ export {
   type OAuthProviderPort,
   type OAuthTokenBundle,
 } from "./connectors/linkedin-oauth-provider.js";
+export {
+  StubMetaOAuthProvider,
+  MetaOAuthProvider,
+  createMetaOAuthProvider,
+  metaScopesFor,
+  isMetaProvider,
+} from "./connectors/meta-oauth-provider.js";
 
 export const packageName = "@at72-verse/verse-core" as const;

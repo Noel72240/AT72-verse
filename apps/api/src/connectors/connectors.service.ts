@@ -19,7 +19,7 @@ import { PRISMA } from "../auth/auth.tokens.js";
 import { VERSE_CORE } from "../core/core.tokens.js";
 import { RbacService } from "../rbac/rbac.service.js";
 
-const PROVIDERS = new Set<ConnectorProviderId>(["linkedin"]);
+const PROVIDERS = new Set<ConnectorProviderId>(["linkedin", "facebook", "instagram"]);
 
 @Injectable()
 export class ConnectorsService implements OnModuleInit {
@@ -65,10 +65,11 @@ export class ConnectorsService implements OnModuleInit {
     if (!PROVIDERS.has(provider as ConnectorProviderId)) {
       throw new BadRequestException({
         code: "unsupported_provider",
-        message: "Only linkedin is supported in Phase 28a",
+        message: "Supported providers: linkedin, facebook, instagram",
       });
     }
     const redirectUri =
+      process.env.CONNECTORS_REDIRECT_URI ??
       process.env.LINKEDIN_REDIRECT_URI ??
       `${process.env.API_PUBLIC_URL ?? "http://localhost:3001"}/connectors/oauth/callback`;
     return this.core.getOAuthConnector().startAuthorize({
@@ -104,7 +105,7 @@ export class ConnectorsService implements OnModuleInit {
     if (!PROVIDERS.has(provider as ConnectorProviderId)) {
       throw new BadRequestException({
         code: "unsupported_provider",
-        message: "Only linkedin is supported in Phase 28a",
+        message: "Supported providers: linkedin, facebook, instagram",
       });
     }
     await this.core.getOAuthConnector().disconnect({

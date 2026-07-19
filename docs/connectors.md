@@ -1,11 +1,11 @@
 # Connectors & Secrets Vault (Phase 28a / ADR-013)
 
-## Scope 28a
+## Scope
 
 - `SecretsVaultPort` + local AES-256-GCM encryption
-- `OAuthConnector` (LinkedIn) confined to **API ↔ Core**
+- OAuth connectors: **LinkedIn**, **Facebook**, **Instagram** (Meta) — confined to **API ↔ Core**
 - API + UI Connect / Disconnect
-- **No** `social-publish` live (dry-run only until 28b)
+- Live publish: **LinkedIn** today; Facebook/Instagram connection works, live Graph publish pending
 
 ## Env
 
@@ -13,19 +13,30 @@
 |----------|---------|
 | `VERSE_VAULT_MASTER_KEY` | 64-hex (32 bytes) or passphrase (scrypt) |
 | `LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` | Real LinkedIn app |
-| `LINKEDIN_REDIRECT_URI` | Defaults to `{API_PUBLIC_URL}/connectors/oauth/callback` |
-| `VERSE_OAUTH_STUB=1` | Force stub provider (CI / local without LinkedIn app) |
-| `VERSE_LIVE_OAUTH=1` | Opt-in for real live publish tests (28b) |
-| `WEB_PUBLIC_URL` | Redirect after callback (default `http://localhost:3000`) |
+| `META_APP_ID` / `META_APP_SECRET` | Meta app (Facebook Login + Instagram Graph) |
+| `CONNECTORS_REDIRECT_URI` | Shared OAuth callback (preferred) |
+| `LINKEDIN_REDIRECT_URI` | Fallback redirect (legacy) |
+| Redirect default | `{API_PUBLIC_URL}/connectors/oauth/callback` |
+| `VERSE_OAUTH_STUB=1` | Force stub providers (CI / local without apps) |
+| `VERSE_LIVE_OAUTH=1` | Opt-in for real live publish tests |
+| `WEB_PUBLIC_URL` | Redirect after callback — production: `https://at72-verse.allotech72.fr` |
+| `API_PUBLIC_URL` | Public API base for callback URL |
 
-Without LinkedIn credentials, stub mode is automatic.
+Without LinkedIn / Meta credentials, stub mode is automatic for that network.
 
-## Live publish (Phase 28b)
+## Live publish
 
 - Default tool/skill mode = **dry-run** (no network).
-- `mode: "live"` + valid LinkedIn connection → member UGC publish.
+- `mode: "live"` + LinkedIn connection → member UGC publish.
+- `mode: "live"` + Facebook/Instagram → clear pending error until Graph publish ships.
 - `mode: "live"` without connection → KernelError **`CONNECTOR_NOT_CONNECTED`** (no silent dry-run).
 - Access token resolved only in Core ToolRuntime → injected on tool ctx (`oauth`) — never from Agents.
+
+## Meta notes
+
+- One Meta app covers Facebook + Instagram connect buttons.
+- Instagram content publishing later requires an **Instagram Business/Creator** account linked to a **Facebook Page**.
+- Add the same redirect URI in the Meta app settings as on Railway.
 
 ## Invariants
 

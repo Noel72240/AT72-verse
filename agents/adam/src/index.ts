@@ -48,7 +48,55 @@ Rules:
 - Otherwise mode "none"
 - Choose at most one mode. Never invent other agents. Never use campaign for a greeting like "salut" or "hello".`;
 
+/** User wants to publish (or simulate publishing) a drafted post. */
+export function isPublishIntent(goal: string): boolean {
+  const g = goal.trim().toLowerCase();
+  if (!g) return false;
+  if (/\b(publie|publish|poste[rz]?|envoie|envoyer)\b/.test(g)) return true;
+  if (/^go\s*(live|linkedin)?[\s!?.]*$/i.test(g)) return true;
+  return false;
+}
+
+/** Opt-in real LinkedIn publish (default remains dry-run simulation). */
+export function isLivePublishIntent(goal: string): boolean {
+  const g = goal.trim().toLowerCase();
+  return (
+    /\b(en\s+live|en\s+vrai|for\s+real|really|maintenant|now)\b/.test(g) ||
+    /\bpublie\s+(vraiment|réellement|reellement)\b/.test(g) ||
+    /\blive\s+publish\b/.test(g)
+  );
+}
+
+const DRAFT_MARKER = "---DRAFT---";
+
+/** Pull post body from chat-attached draft or leftover text after the publish verb. */
+export function extractPublishDraft(goal: string): string | null {
+  const markerIdx = goal.indexOf(DRAFT_MARKER);
+  if (markerIdx >= 0) {
+    const body = goal
+      .slice(markerIdx + DRAFT_MARKER.length)
+      .replace(/^\s*\n?/, "")
+      .trim();
+    return body.length > 0 ? stripPublishCta(body) : null;
+  }
+  const stripped = goal
+    .replace(
+      /^(publie|publish|poste[rz]?|envoie|envoyer)(\s+(ça|ca|le|ce|ceci|this|sur\s+linkedin|en\s+live|en\s+vrai|maintenant|for\s+real|really|now))*[\s:!.-]*/i,
+      "",
+    )
+    .trim();
+  if (stripped.length >= 40) return stripPublishCta(stripped);
+  return null;
+}
+
+function stripPublishCta(text: string): string {
+  return text
+    .replace(/\n*---\nPour publier sur LinkedIn[\s\S]*$/i, "")
+    .trim();
+}
+
 function isDirectChatGoal(goal: string): boolean {
+  if (isPublishIntent(goal)) return false;
   const g = goal.trim().toLowerCase();
   if (g.length <= 40) {
     if (
@@ -70,6 +118,7 @@ function isDirectChatGoal(goal: string): boolean {
 }
 
 function isSimpleWritingGoal(goal: string): boolean {
+  if (isPublishIntent(goal)) return false;
   const g = goal.trim().toLowerCase();
   if (/campagne|campaign|(article|contenu).*(seo|visuel|image)/.test(g)) {
     return false;
@@ -77,6 +126,16 @@ function isSimpleWritingGoal(goal: string): boolean {
   return /facebook|linkedin|instagram|twitter|x\.com|post|poste|rédige|redige|write|annonce/.test(
     g,
   );
+}
+
+const PUBLISH_CTA =
+  "\n\n---\nPour publier : dis « publie » (simulation) ou « publie en live » (après connexion sur /connectors — LinkedIn live OK ; Facebook/Instagram : connexion OK, live bientôt).";
+
+function detectPublishPlatform(goal: string): "linkedin" | "facebook" | "instagram" {
+  const g = goal.toLowerCase();
+  if (/\binstagram\b|\binsta\b/.test(g)) return "instagram";
+  if (/\bfacebook\b|\bfb\b/.test(g)) return "facebook";
+  return "linkedin";
 }
 
 async function directWriteReply(
@@ -99,13 +158,193 @@ async function directWriteReply(
       { role: "user", content: goal },
     ],
   });
+  const body = reply.content?.trim() || "Je n'ai pas pu rédiger le post — réessaie.";
   return {
     plan,
     result: {
-      content: reply.content?.trim() || "Je n'ai pas pu rédiger le post — réessaie.",
+      content: `${body}${PUBLISH_CTA}`,
     },
     resolved_persona: resolved,
   };
+}
+
+function formatPulsePublishResult(
+  mode: "dry_run" | "live",
+  draft: string,
+  platform: "linkedin" | "facebook" | "instagram",
+  pulseResult: Record<string, unknown> | undefined,
+): string {
+  const fromPulse =
+    typeof pulseResult?.content === "string" && pulseResult.content.trim()
+      ? pulseResult.content.trim()
+      : null;
+  if (fromPulse) return fromPulse;
+
+  const label =
+    platform === "linkedin" ? "LinkedIn" : platform === "facebook" ? "Facebook" : "Instagram";
+
+  if (mode === "live") {
+    const pub = pulseResult?.publish_result as Record<string, unknown> | undefined;
+    const id = typeof pub?.external_post_id === "string" ? pub.external_post_id : null;
+    return [`✅ Publié sur ${label}.`, id ? `ID : ${id}` : null, "", draft]
+      .filter((line) => line !== null)
+      .join("\n");
+  }
+
+  return [
+    `✅ Simulation ${label} (dry-run) — rien n'a été publié pour de vrai.`,
+    "",
+    draft,
+    "",
+    `Ensuite : connecte ${label} sur /connectors, puis dis « publie en live ».`,
+  ].join("\n");
+}
+
+async function publishViaPulse(
+  ctx: AdamHandleTaskContext,
+  goal: string,
+  resolved: ResolvedPersona,
+): Promise<AdamHandleTaskResult> {
+  const plan: AgentPlan = {
+    version: "1",
+    steps: [
+      { name: "prepare_publish", kind: "reason", agent_id: ADAM_AGENT_ID },
+      { name: "delegate_pulse", kind: "delegate", agent_id: "pulse" },
+      { name: "report_publish", kind: "act", agent_id: ADAM_AGENT_ID },
+    ],
+  };
+
+  const platform = detectPublishPlatform(goal);
+  const platformLabel =
+    platform === "linkedin" ? "LinkedIn" : platform === "facebook" ? "Facebook" : "Instagram";
+
+  const draft = extractPublishDraft(goal);
+  if (!draft) {
+    return {
+      plan: {
+        version: "1",
+        steps: [{ name: "publish_need_draft", kind: "act", agent_id: ADAM_AGENT_ID }],
+      },
+      result: {
+        content: `Je n'ai pas de brouillon à publier. Demande-moi d'abord un post ${platformLabel}, puis réponds simplement « publie ».`,
+      },
+      resolved_persona: resolved,
+    };
+  }
+
+  const mode: "dry_run" | "live" = isLivePublishIntent(goal) ? "live" : "dry_run";
+
+  await ctx.kernel.memory.remember({
+    scope: "run.working",
+    content: draft,
+    type: "ephemeral",
+  });
+
+  try {
+    const delegated = await ctx.kernel.orchestration.delegate({
+      target_agent: "pulse",
+      task: {
+        from_memory: true,
+        brief_scope: "run.working",
+        goal: draft,
+        mode,
+        platform,
+        publish_as_is: true,
+      },
+    });
+
+    if (delegated.status !== "completed") {
+      const err = delegated.error ?? "Publication échouée";
+      if (err.includes("WAITING_APPROVAL")) {
+        return {
+          plan,
+          result: {
+            content:
+              "La publication attend une approbation humaine. Ouvre /approvals pour valider ou refuser.",
+          },
+          resolved_persona: resolved,
+        };
+      }
+      if (/CONNECTOR_NOT_CONNECTED|not connected|OAuth/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content: `${platformLabel} n'est pas connecté pour ce workspace. Va sur /connectors, connecte ${platformLabel}, puis réessaie « publie en live ».`,
+          },
+          resolved_persona: resolved,
+        };
+      }
+      if (/LIVE_PUBLISH_PLATFORM_PENDING|not available yet|NOT_IMPLEMENTED/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content: `${platformLabel} est connectable, mais la publication live arrive bientôt. Tu peux utiliser « publie » (simulation) ou LinkedIn pour le live.`,
+          },
+          resolved_persona: resolved,
+        };
+      }
+      return {
+        plan,
+        result: {
+          content: `Publication impossible : ${err}`,
+        },
+        resolved_persona: resolved,
+      };
+    }
+
+    const pulseResult =
+      delegated.result && typeof delegated.result === "object"
+        ? (delegated.result as Record<string, unknown>)
+        : undefined;
+
+    return {
+      plan,
+      result: {
+        ...(pulseResult ?? {}),
+        content: formatPulsePublishResult(mode, draft, platform, pulseResult),
+        mode,
+        platform,
+      },
+      resolved_persona: resolved,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/CONNECTOR_NOT_CONNECTED|not connected|OAuth/i.test(msg)) {
+      return {
+        plan,
+        result: {
+          content: `${platformLabel} n'est pas connecté pour ce workspace. Va sur /connectors, connecte ${platformLabel}, puis réessaie « publie en live ».`,
+        },
+        resolved_persona: resolved,
+      };
+    }
+    if (/WAITING_APPROVAL/i.test(msg)) {
+      return {
+        plan,
+        result: {
+          content:
+            "La publication attend une approbation humaine. Ouvre /approvals pour valider ou refuser.",
+        },
+        resolved_persona: resolved,
+      };
+    }
+    if (/LIVE_PUBLISH_PLATFORM_PENDING|not available yet|NOT_IMPLEMENTED/i.test(msg)) {
+      return {
+        plan,
+        result: {
+          content: `${platformLabel} est connectable, mais la publication live arrive bientôt. Tu peux utiliser « publie » (simulation) ou LinkedIn pour le live.`,
+        },
+        resolved_persona: resolved,
+      };
+    }
+    return {
+      plan,
+      result: {
+        content: `Publication impossible : ${msg}`,
+      },
+      resolved_persona: resolved,
+    };
+  }
 }
 
 async function directChatReply(
@@ -297,6 +536,11 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
     typeof payload.goal === "string" && payload.goal.trim().length > 0
       ? payload.goal.trim()
       : "No goal provided.";
+
+  // Publish / schedule intent → Pulse (LinkedIn dry-run by default, live opt-in).
+  if (isPublishIntent(goal)) {
+    return publishViaPulse(ctx, goal, resolved);
+  }
 
   // Chat / greetings must never fan-out to a campaign (LLM planner is over-eager).
   if (isDirectChatGoal(goal)) {

@@ -69,4 +69,46 @@ describe("OAuthConnector Phase 28a", () => {
       (err: Error & { code?: string }) => err.code === "OAUTH_INVALID_STATE",
     );
   });
+
+  it("connect facebook via Meta stub", async () => {
+    const { StubMetaOAuthProvider } = await import("./meta-oauth-provider.js");
+    const oauth = new OAuthConnector({
+      vault: new LocalEncryptedSecretsVault({ masterKey: "c".repeat(64) }),
+      store: new InMemoryConnectorStore(),
+      providers: { facebook: new StubMetaOAuthProvider("facebook") },
+      meta: { app_id: "meta-app", app_secret: "meta-secret" },
+    });
+    const start = await oauth.startAuthorize({
+      organization_id: org,
+      workspace_id: ws,
+      provider: "facebook",
+      redirect_uri: "http://localhost:3001/connectors/oauth/callback",
+    });
+    assert.ok(start.authorize_url.includes("facebook.com"));
+    const state = new URL(start.authorize_url).searchParams.get("state")!;
+    const connected = await oauth.handleCallback({ code: "fb-code", state });
+    assert.equal(connected.provider, "facebook");
+    assert.equal(connected.status, "connected");
+    const token = await oauth.resolveAccessToken({ workspace_id: ws, provider: "facebook" });
+    assert.equal(token, "stub-meta-access-fb-code");
+  });
+
+  it("connect instagram via Meta stub", async () => {
+    const { StubMetaOAuthProvider } = await import("./meta-oauth-provider.js");
+    const oauth = new OAuthConnector({
+      vault: new LocalEncryptedSecretsVault({ masterKey: "d".repeat(64) }),
+      store: new InMemoryConnectorStore(),
+      providers: { instagram: new StubMetaOAuthProvider("instagram") },
+    });
+    const start = await oauth.startAuthorize({
+      organization_id: org,
+      workspace_id: ws,
+      provider: "instagram",
+      redirect_uri: "http://localhost/cb",
+    });
+    const state = new URL(start.authorize_url).searchParams.get("state")!;
+    const connected = await oauth.handleCallback({ code: "ig-code", state });
+    assert.equal(connected.provider, "instagram");
+    assert.match(String(connected.external_account_hint), /instagram/);
+  });
 });

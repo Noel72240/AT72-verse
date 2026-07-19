@@ -2,7 +2,7 @@
  * Connector connection metadata only (Phase 28a / ADR-013).
  * Never includes tokens, codes, state, or client secrets.
  */
-export type ConnectorProviderId = "linkedin";
+export type ConnectorProviderId = "linkedin" | "facebook" | "instagram";
 
 export type ConnectorConnectionStatus =
   | "pending"

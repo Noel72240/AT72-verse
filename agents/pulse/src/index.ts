@@ -61,7 +61,11 @@ export async function handleTask(ctx: PulseHandleTaskContext): Promise<PulseHand
       ? resolved.spec.rules.map((r) => `[${r.severity}] ${r.text}`).join("\n")
       : undefined;
 
-  const taskFlags = payload as AgentTaskPayload & { platform?: string; mode?: string };
+  const taskFlags = payload as AgentTaskPayload & {
+    platform?: string;
+    mode?: string;
+    publish_as_is?: boolean;
+  };
 
   const invoked = await ctx.kernel.skills.invoke({
     skill_id: PULSE_SOCIAL_SKILL_ID,
@@ -71,6 +75,7 @@ export async function handleTask(ctx: PulseHandleTaskContext): Promise<PulseHand
       ...(taskFlags.mode === "live" || taskFlags.mode === "dry_run"
         ? { mode: taskFlags.mode }
         : {}),
+      ...(taskFlags.publish_as_is === true ? { publish_as_is: true } : {}),
       ...(formality ? { formality } : {}),
       ...(rules ? { rules } : {}),
     },

@@ -5,7 +5,10 @@ import type { BusMessage } from "@at72-verse/contracts";
 import {
   ADAM_CAMPAIGN_TARGETS,
   buildAdamPlan,
+  extractPublishDraft,
   handleTask,
+  isLivePublishIntent,
+  isPublishIntent,
   parseAdamLlmPlan,
 } from "./index.js";
 
@@ -179,5 +182,61 @@ describe("agent-adam Phase 15/24", () => {
     assert.ok(out.plan.steps.some((s) => s.name === "direct_write"));
     assert.ok(!out.plan.steps.some((s) => s.kind === "delegate"));
     assert.equal(typeof out.result?.content, "string");
+  });
+
+  it("extractPublishDraft reads ---DRAFT--- marker", () => {
+    const draft = extractPublishDraft("publie\n\n---DRAFT---\nHello LinkedIn world from Verse");
+    assert.equal(draft, "Hello LinkedIn world from Verse");
+  });
+
+  it("isPublishIntent detects French publish verbs", () => {
+    assert.equal(isPublishIntent("publie"), true);
+    assert.equal(isPublishIntent("publie en live"), true);
+    assert.equal(isLivePublishIntent("publie"), false);
+    assert.equal(isLivePublishIntent("publie en live"), true);
+  });
+
+  it("handleTask publish without draft asks for a post first", async () => {
+    const kernel = createKernelClient({
+      context: {
+        run_id: "11111111-1111-4111-8111-111111111111",
+        agent_id: "adam",
+        organization_id: "22222222-2222-4222-8222-222222222222",
+        workspace_id: "33333333-3333-4333-8333-333333333333",
+        trace_id: "55555555-5555-4555-8555-555555555555",
+        step_id: "44444444-4444-4444-8444-444444444444",
+      },
+      backend: "stub",
+    });
+
+    const out = await handleTask({
+      kernel,
+      message: messageWithGoal("publie"),
+    });
+    assert.ok(out.plan.steps.some((s) => s.name === "publish_need_draft"));
+    assert.match(String(out.result?.content), /brouillon/i);
+  });
+
+  it("handleTask publish with draft delegates to Pulse", async () => {
+    const kernel = createKernelClient({
+      context: {
+        run_id: "11111111-1111-4111-8111-111111111111",
+        agent_id: "adam",
+        organization_id: "22222222-2222-4222-8222-222222222222",
+        workspace_id: "33333333-3333-4333-8333-333333333333",
+        trace_id: "55555555-5555-4555-8555-555555555555",
+        step_id: "44444444-4444-4444-8444-444444444444",
+      },
+      backend: "stub",
+    });
+
+    const out = await handleTask({
+      kernel,
+      message: messageWithGoal(
+        "publie\n\n---DRAFT---\nVoici un post LinkedIn assez long pour Allotech72 #IA",
+      ),
+    });
+    assert.ok(out.plan.steps.some((s) => s.name === "delegate_pulse"));
+    assert.equal(out.result?.target_agent, "pulse");
   });
 });

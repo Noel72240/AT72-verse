@@ -29,6 +29,39 @@ import {
 } from "@/lib/api";
 import { TimelinePanel } from "./TimelinePanel";
 
+const DRAFT_MARKER = "---DRAFT---";
+
+function isPublishLike(text: string): boolean {
+  const g = text.trim().toLowerCase();
+  return /\b(publie|publish|poste[rz]?|envoie|envoyer)\b/.test(g) || /^go\s*(live|linkedin)?[\s!?.]*$/i.test(g);
+}
+
+function stripPublishCta(text: string): string {
+  return text.replace(/\n*---\nPour publier sur LinkedIn[\s\S]*$/i, "").trim();
+}
+
+/** Attach last Adam draft so a new run still has the post body to publish. */
+function buildPublishGoal(text: string, messages: ApiMessage[]): string {
+  if (!isPublishLike(text)) return text;
+  if (text.includes(DRAFT_MARKER)) return text;
+  // User already pasted a long body after the verb.
+  const afterVerb = text
+    .replace(
+      /^(publie|publish|poste[rz]?|envoie|envoyer)(\s+(ça|ca|le|ce|ceci|this|sur\s+linkedin|en\s+live|en\s+vrai|maintenant|for\s+real|really|now))*[\s:!.-]*/i,
+      "",
+    )
+    .trim();
+  if (afterVerb.length >= 40) return text;
+
+  const lastAssistant = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant" && m.content?.trim());
+  if (!lastAssistant?.content?.trim()) return text;
+  const draftBody = stripPublishCta(lastAssistant.content);
+  if (!draftBody) return text;
+  return `${text}\n\n${DRAFT_MARKER}\n${draftBody}`;
+}
+
 export function ChatApp() {
   const [orgs, setOrgs] = useState<OrgMembership[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -268,10 +301,11 @@ export function ChatApp() {
       setMessages((m) => [...m, userMsg]);
       setRunCost(null);
       setRunTraceId(null);
+      const goal = buildPublishGoal(text, messages);
       const { run, steps: initial } = await createRun({
         workspaceId,
         conversationId,
-        goal: text,
+        goal,
       });
       setSteps(initial);
       setRunStatus(run.status);
@@ -302,6 +336,12 @@ export function ChatApp() {
         </div>
         <a href="/chat" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
           Chat
+        </a>
+        <a href="/connectors" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Connectors
+        </a>
+        <a href="/approvals" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Approvals
         </a>
         <a href="/workflows" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Workflows
@@ -390,9 +430,10 @@ export function ChatApp() {
           <div className="messages">
             {messages.length === 0 && !busy ? (
               <p className="empty">
-                Dis bonjour à Adam, ou demande par ex. :
+                Demande un post LinkedIn, puis dis « publie » (simulation) ou « publie en live »
+                (après connexion sur Connectors).
                 <br />
-                « Prépare un post Facebook pour Allotech72 »
+                Ex. : « Prépare un post LinkedIn pour Allotech72 »
               </p>
             ) : (
               messages.map((m) => (

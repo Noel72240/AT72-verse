@@ -32,7 +32,7 @@ Paste from your secrets file (values only on Railway):
 | `OPENAI_API_KEY` | `sk-…` |
 | `AUTH_PROVIDER` | `dev` (MVP ; Clerk later) |
 | `VERSE_KERNEL_BACKEND` | `core` |
-| `WEB_ORIGIN` | `https://at-72-verse-web.vercel.app` |
+| `WEB_ORIGIN` | `https://at72-verse.allotech72.fr` |
 | `PAYMENT_PROVIDER` | `sumup` |
 | `VERSE_PAYMENT_STUB` | `1` (until SumUp live keys) |
 | `VERSE_LLM_MODEL_FAST` | optional — default `gpt-5.4-nano` (vitesse) |
@@ -72,4 +72,4 @@ Then reload `https://<api>/health/db` → expect `{"status":"ok","users":0}`.
   3. Settings → Deploy → **clear Custom Start Command** (leave empty; use Dockerfile)
 - Migrate fails on `vector` → Neon SQL Editor → `CREATE EXTENSION IF NOT EXISTS vector;`
 - `/me` 500 after login → same DB/migrate issue; check Railway logs for Prisma errors
-- CORS errors → check `WEB_ORIGIN` matches the exact Vercel URL (https, no trailing slash)
+- CORS errors → check `WEB_ORIGIN` matches the exact web URL (https, no trailing slash), e.g. `https://at72-verse.allotech72.fr`

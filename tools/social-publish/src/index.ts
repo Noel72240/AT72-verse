@@ -148,9 +148,13 @@ export async function execute(ctx: ToolExecuteContext): Promise<Record<string, u
   }
 
   if (platform.toLowerCase() !== "linkedin") {
-    throw new KernelError("INVALID_INPUT", "Live social-publish supports linkedin only", {
-      details: { platform },
-    });
+    throw new KernelError(
+      "NOT_IMPLEMENTED",
+      `Live social-publish for ${platform} is not available yet — connect works; use dry-run or LinkedIn for live publish`,
+      {
+        details: { platform, code: "LIVE_PUBLISH_PLATFORM_PENDING" },
+      },
+    );
   }
 
   const token = ctx.oauth?.access_token;

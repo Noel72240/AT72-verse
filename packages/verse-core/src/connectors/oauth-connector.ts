@@ -10,8 +10,18 @@ import {
   type OAuthProviderPort,
   type OAuthTokenBundle,
 } from "./linkedin-oauth-provider.js";
+import {
+  createMetaOAuthProvider,
+  metaScopesFor,
+} from "./meta-oauth-provider.js";
 
 const LINKEDIN_SCOPES = ["openid", "profile", "w_member_social"] as const;
+
+const SUPPORTED_PROVIDERS: readonly ConnectorProviderId[] = [
+  "linkedin",
+  "facebook",
+  "instagram",
+];
 
 type PendingOAuth = {
   organization_id: string;
@@ -21,12 +31,27 @@ type PendingOAuth = {
   created_at: number;
 };
 
+type ProviderRuntime = {
+  port: OAuthProviderPort;
+  clientId: string;
+  clientSecret: string;
+  scopes: readonly string[];
+};
+
 export type OAuthConnectorOptions = {
   vault: SecretsVaultPort;
   store: ConnectorStorePort;
+  /**
+   * Optional override for LinkedIn only (tests).
+   * Prefer `providers` for multi-network setups.
+   */
   provider?: OAuthProviderPort;
+  /** Per-provider OAuth adapters (linkedin / facebook / instagram). */
+  providers?: Partial<Record<ConnectorProviderId, OAuthProviderPort>>;
   /** Platform LinkedIn app credentials — never passed to Agents/Runtime. */
   linkedin?: { client_id?: string; client_secret?: string };
+  /** Meta app credentials (Facebook + Instagram Login). */
+  meta?: { app_id?: string; app_secret?: string };
   /** Pending state TTL ms (default 10 min). */
   pending_ttl_ms?: number;
 };
@@ -39,9 +64,7 @@ export type OAuthConnectorOptions = {
 export class OAuthConnector {
   private vault: SecretsVaultPort;
   private store: ConnectorStorePort;
-  private readonly provider: OAuthProviderPort;
-  private readonly clientId: string;
-  private readonly clientSecret: string;
+  private readonly runtimes: Map<ConnectorProviderId, ProviderRuntime>;
   private readonly pendingTtlMs: number;
   /** state → pending — Core memory only; never exposed on public DTOs. */
   private readonly pending = new Map<string, PendingOAuth>();
@@ -49,12 +72,50 @@ export class OAuthConnector {
   constructor(options: OAuthConnectorOptions) {
     this.vault = options.vault;
     this.store = options.store;
-    this.provider = options.provider ?? createLinkedInOAuthProvider();
-    this.clientId =
-      options.linkedin?.client_id ?? process.env.LINKEDIN_CLIENT_ID ?? "stub-client";
-    this.clientSecret =
-      options.linkedin?.client_secret ?? process.env.LINKEDIN_CLIENT_SECRET ?? "stub-secret";
     this.pendingTtlMs = options.pending_ttl_ms ?? 10 * 60 * 1000;
+
+    const linkedInClientId =
+      options.linkedin?.client_id ?? process.env.LINKEDIN_CLIENT_ID ?? "stub-client";
+    const linkedInClientSecret =
+      options.linkedin?.client_secret ?? process.env.LINKEDIN_CLIENT_SECRET ?? "stub-secret";
+    const metaAppId = options.meta?.app_id ?? process.env.META_APP_ID ?? "stub-meta-app";
+    const metaAppSecret =
+      options.meta?.app_secret ?? process.env.META_APP_SECRET ?? "stub-meta-secret";
+
+    const linkedInPort =
+      options.providers?.linkedin ?? options.provider ?? createLinkedInOAuthProvider();
+    const facebookPort = options.providers?.facebook ?? createMetaOAuthProvider("facebook");
+    const instagramPort = options.providers?.instagram ?? createMetaOAuthProvider("instagram");
+
+    this.runtimes = new Map([
+      [
+        "linkedin",
+        {
+          port: linkedInPort,
+          clientId: linkedInClientId,
+          clientSecret: linkedInClientSecret,
+          scopes: LINKEDIN_SCOPES,
+        },
+      ],
+      [
+        "facebook",
+        {
+          port: facebookPort,
+          clientId: metaAppId,
+          clientSecret: metaAppSecret,
+          scopes: metaScopesFor("facebook"),
+        },
+      ],
+      [
+        "instagram",
+        {
+          port: instagramPort,
+          clientId: metaAppId,
+          clientSecret: metaAppSecret,
+          scopes: metaScopesFor("instagram"),
+        },
+      ],
+    ]);
   }
 
   setVault(vault: SecretsVaultPort): void {
@@ -75,7 +136,8 @@ export class OAuthConnector {
     provider: ConnectorProviderId;
     redirect_uri: string;
   }): Promise<{ authorize_url: string; provider: ConnectorProviderId }> {
-    if (input.provider !== "linkedin") {
+    const runtime = this.runtimes.get(input.provider);
+    if (!runtime || !SUPPORTED_PROVIDERS.includes(input.provider)) {
       throw Object.assign(new Error("UNSUPPORTED_PROVIDER"), { code: "UNSUPPORTED_PROVIDER" });
     }
     this.purgeExpiredPending();
@@ -87,11 +149,11 @@ export class OAuthConnector {
       redirect_uri: input.redirect_uri,
       created_at: Date.now(),
     });
-    const authorize_url = this.provider.buildAuthorizeUrl({
-      client_id: this.clientId,
+    const authorize_url = runtime.port.buildAuthorizeUrl({
+      client_id: runtime.clientId,
       redirect_uri: input.redirect_uri,
       state,
-      scopes: [...LINKEDIN_SCOPES],
+      scopes: [...runtime.scopes],
     });
     return { authorize_url, provider: input.provider };
   }
@@ -114,9 +176,14 @@ export class OAuthConnector {
       throw Object.assign(new Error("OAUTH_INVALID_CODE"), { code: "OAUTH_INVALID_CODE" });
     }
 
-    const tokens = await this.provider.exchangeCode({
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
+    const runtime = this.runtimes.get(pending.provider);
+    if (!runtime) {
+      throw Object.assign(new Error("UNSUPPORTED_PROVIDER"), { code: "UNSUPPORTED_PROVIDER" });
+    }
+
+    const tokens = await runtime.port.exchangeCode({
+      client_id: runtime.clientId,
+      client_secret: runtime.clientSecret,
       redirect_uri: pending.redirect_uri,
       code: input.code.trim(),
     });
@@ -175,17 +242,18 @@ export class OAuthConnector {
     const row = await this.store.getByWorkspaceProvider(input.workspace_id, input.provider);
     if (!row) return null;
 
+    const runtime = this.runtimes.get(input.provider);
     const plaintext = await this.vault.get({
       organization_id: row.organization_id,
       workspace_id: row.workspace_id,
       ref: row.vault_ref,
     });
-    if (plaintext && this.provider.revoke) {
+    if (plaintext && runtime?.port.revoke) {
       try {
         const bundle = parseTokenBundle(plaintext);
-        await this.provider.revoke({
-          client_id: this.clientId,
-          client_secret: this.clientSecret,
+        await runtime.port.revoke({
+          client_id: runtime.clientId,
+          client_secret: runtime.clientSecret,
           token: bundle.access_token,
         });
       } catch {
@@ -223,7 +291,6 @@ export class OAuthConnector {
 
   /**
    * Resolve access token for ToolRuntime live path (Phase 28b).
-   * 28a: available for tests of confinement — not wired to social-publish live.
    * Caller (Core only) must not log/persist/bus the return value.
    */
   async resolveAccessToken(input: {

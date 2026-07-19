@@ -23,6 +23,8 @@ export const SOCIAL_SCHEDULING_SKILL_SPEC: SkillSpec = {
       formality: { type: "string" },
       rules: { type: "string" },
       mode: { type: "string", enum: ["dry_run", "live"] },
+      /** When true, treat brief as final post body (skip LLM rewrite). */
+      publish_as_is: { type: "boolean" },
     },
   },
   output_schema: {
@@ -78,16 +80,65 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
       ? ctx.input.rules.trim()
       : null;
   const mode = ctx.input.mode === "live" ? "live" : "dry_run";
+  const publishAsIs = ctx.input.publish_as_is === true;
+
+  const postBody = brief.slice(0, 3000);
 
   const toolResult = await ctx.kernel.tools.execute({
     tool_id: "social-publish",
     input: {
       platform,
-      content: brief.slice(0, 500),
+      content: postBody,
       ...(mode === "dry_run" ? { scheduled_at: "2026-07-20T09:00:00.000Z" } : {}),
       mode,
     },
   });
+
+  // Ready-to-publish drafts (from Adam chat) — skip a second LLM rewrite.
+  if (publishAsIs) {
+    const label =
+      platform.toLowerCase() === "facebook"
+        ? "Facebook"
+        : platform.toLowerCase() === "instagram"
+          ? "Instagram"
+          : "LinkedIn";
+    const content =
+      mode === "live"
+        ? [
+            `✅ Publié sur ${label}.`,
+            typeof toolResult.output?.external_post_id === "string"
+              ? `ID : ${toolResult.output.external_post_id}`
+              : null,
+            "",
+            postBody,
+          ]
+            .filter((line) => line !== null)
+            .join("\n")
+        : [
+            `✅ Simulation ${label} (dry-run) — rien n'a été publié pour de vrai.`,
+            "",
+            postBody,
+            "",
+            `Ensuite : connecte ${label} sur /connectors, puis dis « publie en live ».`,
+          ].join("\n");
+
+    const output: Record<string, unknown> = {
+      content,
+      posts: [
+        {
+          platform,
+          body: postBody,
+          ...(mode === "dry_run" ? { scheduled_at: "2026-07-20T09:00:00.000Z" } : {}),
+        },
+      ],
+      mode,
+      ...(mode === "live"
+        ? { publish_result: toolResult.output }
+        : { dry_run: toolResult.output }),
+    };
+    requireValid(SOCIAL_SCHEDULING_SKILL_SPEC.output_schema, output, "output");
+    return output;
+  }
 
   const systemParts = [
     "You are a social media planner. Propose a short post calendar from the brief and publish intent.",

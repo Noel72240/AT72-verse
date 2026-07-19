@@ -2,6 +2,8 @@
  * LinkedIn (and stub) token exchange — Core only (ADR-013).
  * Never imported by Agents / Skills / Runtime / Host.
  */
+import type { ConnectorProviderId } from "@at72-verse/contracts";
+
 export type OAuthTokenBundle = {
   access_token: string;
   refresh_token?: string;
@@ -11,7 +13,7 @@ export type OAuthTokenBundle = {
 };
 
 export type OAuthProviderPort = {
-  provider: "linkedin";
+  provider: ConnectorProviderId;
   buildAuthorizeUrl(input: {
     client_id: string;
     redirect_uri: string;

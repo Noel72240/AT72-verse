@@ -41,10 +41,19 @@ export function setToolMetricsHook(hook: ToolMetricsHook | undefined): void {
   toolMetricsHook = hook;
 }
 
-/** Map oauth tools to connector provider (Phase 28b). */
-function oauthProviderForTool(toolId: string): ConnectorProviderId | null {
-  if (toolId === "social-publish") return "linkedin";
-  return null;
+/** Map oauth tools + platform input to connector provider (Phase 28b+). */
+function oauthProviderForTool(
+  toolId: string,
+  input: Record<string, unknown>,
+): ConnectorProviderId | null {
+  if (toolId !== "social-publish") return null;
+  const platform = String(input.platform ?? "linkedin")
+    .trim()
+    .toLowerCase();
+  if (platform === "facebook" || platform === "instagram" || platform === "linkedin") {
+    return platform;
+  }
+  return "linkedin";
 }
 
 function summarize(value: unknown, max = 500): string {
@@ -359,7 +368,7 @@ export class ToolRuntime {
             details: { tool_id: request.tool_id },
           });
         }
-        const provider = oauthProviderForTool(request.tool_id);
+        const provider = oauthProviderForTool(request.tool_id, request.input);
         if (!provider || !this.oauthConnector) {
           status = "failed";
           errorMsg = "CONNECTOR_NOT_CONNECTED";
