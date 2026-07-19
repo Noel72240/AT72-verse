@@ -50,7 +50,16 @@ Railway sets `PORT` automatically — the API already reads `PORT`.
 
 With `AUTH_PROVIDER=dev`, the Vercel login page uses DevAuth against your Railway API — same as local demo.
 
-## Troubleshooting
+## One-time Neon schema (if `/health/db` says users table missing)
+
+On your PC (PowerShell), from the repo root, with Neon **direct** URL (no `-pooler`):
+
+```powershell
+$env:DATABASE_URL = "<paste Neon URL>"
+pnpm db:migrate
+```
+
+Then reload `https://<api>/health/db` → expect `{"status":"ok","users":0}`.
 
 - Build fails on pnpm → ensure latest commit with Dockerfile is on `master`
 - **CRASHED at start** → open **View logs** ; if migrate fails:
