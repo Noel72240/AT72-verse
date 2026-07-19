@@ -65,5 +65,7 @@ export {
   buildPackagesSnapshot,
   isPackageInstalledForCapability,
 } from "./package-registry.js";
+export { createPrismaSecretsVaultCipherStore } from "./vault-store.js";
+export { createPrismaConnectorStore } from "./connector-store.js";
 
 export const packageName = "@at72-verse/db" as const;

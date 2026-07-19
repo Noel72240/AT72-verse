@@ -544,3 +544,40 @@ export async function resumeWorkflowRun(
     body: JSON.stringify({}),
   });
 }
+
+export type ApiConnectorConnection = {
+  id: string;
+  organization_id: string;
+  workspace_id: string;
+  provider: string;
+  status: string;
+  external_account_hint: string | null;
+  connected_at: string | null;
+  revoked_at: string | null;
+  updated_at: string;
+};
+
+export async function listWorkspaceConnectors(
+  workspaceId: string,
+): Promise<{ connections: ApiConnectorConnection[] }> {
+  return apiFetch(`/workspaces/${workspaceId}/connectors`);
+}
+
+export async function startWorkspaceConnector(
+  workspaceId: string,
+  provider: string,
+): Promise<{ authorize_url: string; provider: string }> {
+  return apiFetch(`/workspaces/${workspaceId}/connectors/${encodeURIComponent(provider)}/connect`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function disconnectWorkspaceConnector(
+  workspaceId: string,
+  provider: string,
+): Promise<{ ok: true }> {
+  return apiFetch(`/workspaces/${workspaceId}/connectors/${encodeURIComponent(provider)}`, {
+    method: "DELETE",
+  });
+}

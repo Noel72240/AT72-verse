@@ -22,6 +22,10 @@ import { CostEngine } from "../cost/cost-engine.js";
 import type { VerseCoreHealthReport } from "./health-types.js";
 import { CORE_MODULE_MANIFEST } from "../modules/manifest.js";
 import { CoreKernelClient } from "../kernel/core-kernel-client.js";
+import { LocalEncryptedSecretsVault } from "../vault/local-encrypted-secrets-vault.js";
+import type { SecretsVaultPort } from "../vault/secrets-vault-port.js";
+import { InMemoryConnectorStore, type ConnectorStorePort } from "../connectors/connector-store-port.js";
+import { OAuthConnector } from "../connectors/oauth-connector.js";
 
 export const VERSE_CORE_VERSION = "0.0.0-phase08" as const;
 
@@ -43,6 +47,12 @@ export type VerseCoreOptions = {
   /** Summarizer strategy (default: deterministic concat — DL8). */
   memorySummarizer?: ConversationSummarizerPort;
   toolAudit?: ToolExecutionAuditPort;
+  /** Phase 28a — SecretsVaultPort (default: local encrypted + in-memory cipher store). */
+  secretsVault?: SecretsVaultPort;
+  /** Phase 28a — connector metadata store. */
+  connectorStore?: ConnectorStorePort;
+  /** Phase 28a — OAuthConnector (default constructed from vault+store). */
+  oauthConnector?: OAuthConnector;
 };
 
 /**
@@ -60,6 +70,9 @@ export class VerseCore {
   private toolRuntime: ToolRuntime;
   private readonly permissionEngine: PermissionEngine;
   private readonly costEngine: CostEngine;
+  private secretsVault: SecretsVaultPort;
+  private connectorStore: ConnectorStorePort;
+  private oauthConnector: OAuthConnector;
 
   constructor(options: VerseCoreOptions) {
     this.kernelBackend = options.kernelBackend ?? "stub";
@@ -70,6 +83,15 @@ export class VerseCore {
     this.personaEngine = new PersonaEngine(undefined, options.personaOverrides);
     this.permissionEngine = new PermissionEngine();
     this.costEngine = new CostEngine();
+
+    this.secretsVault = options.secretsVault ?? new LocalEncryptedSecretsVault();
+    this.connectorStore = options.connectorStore ?? new InMemoryConnectorStore();
+    this.oauthConnector =
+      options.oauthConnector ??
+      new OAuthConnector({
+        vault: this.secretsVault,
+        store: this.connectorStore,
+      });
 
     const store = options.memoryStore ?? new InMemoryMemoryStore();
     const summarizer = options.memorySummarizer ?? new DeterministicConversationSummarizer();
@@ -158,6 +180,28 @@ export class VerseCore {
 
   getCostEngine(): CostEngine {
     return this.costEngine;
+  }
+
+  getSecretsVault(): SecretsVaultPort {
+    return this.secretsVault;
+  }
+
+  setSecretsVault(vault: SecretsVaultPort): void {
+    this.secretsVault = vault;
+    this.oauthConnector.setVault(vault);
+  }
+
+  getConnectorStore(): ConnectorStorePort {
+    return this.connectorStore;
+  }
+
+  setConnectorStore(store: ConnectorStorePort): void {
+    this.connectorStore = store;
+    this.oauthConnector.setStore(store);
+  }
+
+  getOAuthConnector(): OAuthConnector {
+    return this.oauthConnector;
   }
 
   async health(): Promise<VerseCoreHealthReport> {

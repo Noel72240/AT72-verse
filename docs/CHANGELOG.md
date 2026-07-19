@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 28a — Vault + OAuth LinkedIn** — **validée PO (2026-07-19)** — lot 1/2 · **28b bloquée** (pack décisions dédié requis)
+  - DX\* + ADR-013 Accepted (+ OAuth confiné API↔Core · DX13-B)
+  - Contracts `0.1.20` : `ConnectorConnectionPublic`
+  - Core : `SecretsVaultPort` · `LocalEncryptedSecretsVault` · `OAuthConnector` · stub LinkedIn
+  - Prisma : `vault_secrets` · `connector_connections`
+  - API : connect / callback / list / disconnect · Web `/connectors`
+  - `social-publish` **reste dry-run** (live = 28b)
+  - Tests vault + OAuth connect/revoke
+  - **Hors scope 28a :** publish live · HITL · cms · P29
 - **Phase 27c — Neo + Kira + Nyx** — **validée PO (2026-07-19)** — lot 3/3 · **Jalon J17 atteint**
   - DW1–DW9 Accepted (+ dry-run crm/video · Kira sans tool · golden Kira→Neo consult · video-brief/video-pipeline · creative-balanced existant)
   - Contracts `0.1.19` : seeds Neo/Kira/Nyx · skills · `crm-sync` · `video-pipeline`

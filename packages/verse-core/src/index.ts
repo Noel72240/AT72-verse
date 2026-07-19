@@ -121,4 +121,32 @@ export {
   listCatalogEntries,
 } from "./registry/package-install-gate.js";
 
+export type {
+  SecretsVaultPort,
+  SecretsVaultCipherStore,
+  SecretsVaultPutInput,
+  SecretsVaultGetInput,
+  VaultSecretRef,
+} from "./vault/secrets-vault-port.js";
+export {
+  LocalEncryptedSecretsVault,
+  InMemorySecretsVaultCipherStore,
+} from "./vault/local-encrypted-secrets-vault.js";
+export type {
+  ConnectorConnectionRecord,
+  ConnectorStorePort,
+} from "./connectors/connector-store-port.js";
+export {
+  InMemoryConnectorStore,
+  toPublicConnection,
+} from "./connectors/connector-store-port.js";
+export { OAuthConnector, type OAuthConnectorOptions } from "./connectors/oauth-connector.js";
+export {
+  StubLinkedInOAuthProvider,
+  LinkedInOAuthProvider,
+  createLinkedInOAuthProvider,
+  type OAuthProviderPort,
+  type OAuthTokenBundle,
+} from "./connectors/linkedin-oauth-provider.js";
+
 export const packageName = "@at72-verse/verse-core" as const;

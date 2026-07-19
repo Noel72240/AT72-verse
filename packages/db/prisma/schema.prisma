@@ -56,6 +56,8 @@ model Organization {
   tenantPackages   TenantPackage[]
   workflowDefinitions WorkflowDefinitionRow[]
   workflowRuns     WorkflowRunRow[]
+  vaultSecrets     VaultSecretRow[]
+  connectorConnections ConnectorConnectionRow[]
 
   @@map("organizations")
 }
@@ -118,6 +120,8 @@ model Workspace {
   toolExecutions ToolExecution[]
   capabilityGrants CapabilityGrant[]
   workflowRuns     WorkflowRunRow[]
+  vaultSecrets     VaultSecretRow[]
+  connectorConnections ConnectorConnectionRow[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -560,4 +564,49 @@ model WorkflowRunRow {
   @@index([status])
   @@index([workflowId])
   @@map("workflow_runs")
+}
+
+/// Ciphertext-only vault blob (Phase 28a / ADR-013). Never stores plaintext.
+model VaultSecretRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  ref            String
+  ciphertext     String   @db.Text
+  iv             String
+  authTag        String   @map("auth_tag")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, ref])
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@map("vault_secrets")
+}
+
+/// OAuth connector metadata only — no tokens (Phase 28a / ADR-013).
+model ConnectorConnectionRow {
+  id                   String    @id @default(uuid()) @db.Uuid
+  organizationId       String    @map("organization_id") @db.Uuid
+  workspaceId          String    @map("workspace_id") @db.Uuid
+  provider             String
+  status               String
+  vaultRef             String    @map("vault_ref")
+  externalAccountHint  String?   @map("external_account_hint")
+  connectedAt          DateTime? @map("connected_at") @db.Timestamptz(3)
+  revokedAt            DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([provider])
+  @@map("connector_connections")
 }

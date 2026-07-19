@@ -93,6 +93,8 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 28 pack DX1–DX13 **soumis PO** (`docs/phase-28-decisions.md`) — orientations PO DX2/3/4/5/8 (+ contraintes vault/dry-run) · **validation finale en attente** · **pas de commit docs** · **pas d’implémentation** · ADR-013 après Accept · pas de P29 auto | Proposed | 2026-07-19 |
 | — | Phase 28 DX1–DX13 **Accepted** (+ amendement **DX13-B** : sous-phases **28a** vault/OAuth/API-UI → **28b** social-publish live LinkedIn) · contraintes plaintext éphémère · dry-run défaut · **ADR-013 Proposed** · **pas d’implémentation** tant que ADR non validé · pas de P29 auto | **Accepted** | 2026-07-19 |
 | — | Phase 28 + **ADR-013 Accepted** (+ OAuth confiné API↔Core · aucune donnée OAuth Agents/Skills/Runtime/Host) · **28a en cours** · 28b bloquée · pas de P29 auto | **Accepted** | 2026-07-19 |
+| — | Phase **28a livrée** (Vault + OAuth LinkedIn + API/UI) — attente validation PO ; social-publish dry-run only · **28b bloquée** · pas de P29 auto | Accepted | 2026-07-19 |
+| — | Phase **28a validée** (Vault + OAuth LinkedIn + API/UI) ; plaintext jamais persisté · OAuth API↔Core only · social-publish dry-run · Kernel public inchangé · **28b pack dédié avant code** · pas de P29 | Accepted | 2026-07-19 |
 | [ADR-013](./ADR/013-tenant-secrets-vault-oauth-connectors.md) | Tenant Secrets Vault + OAuth Connectors (LinkedIn · dual-mode · 28a/28b · OAuth API↔Core only) | **Accepted** | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |

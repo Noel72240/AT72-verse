@@ -6,7 +6,7 @@
 **Lot :** Connecteurs OAuth — premier lot · **social-publish / LinkedIn uniquement**  
 **Découpage :** **28a** (vault + OAuth + API/UI) → stop → **28b** (live `social-publish`)  
 **ADR-013 :** **Accepted** (`docs/ADR/013-tenant-secrets-vault-oauth-connectors.md`)  
-**Implémentation :** **28a en cours / livrable** · **28b bloquée** jusqu’validation PO 28a · **Phase 29 non démarrée**
+**Implémentation :** **28a validée PO** · **28b = pack décisions dédié** (pas d’auto) · **Phase 29 non démarrée**
 
 ---
 
@@ -226,6 +226,6 @@ HITL (P29) · cms / GMB / CRM / video / http live · multi-provider · marketpla
 
 ## Prochaine étape
 
-1. Implémenter **28a uniquement** → stop PO.  
-2. Après validation PO 28a : pack/livraison **28b** (pas d’auto).  
+1. **28a validée PO** — stop.  
+2. Pack de décisions **28b** dédié → Accept PO → puis seulement code live.  
 3. **Pas de Phase 29** sans pack dédié.
