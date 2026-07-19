@@ -95,6 +95,10 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 28 + **ADR-013 Accepted** (+ OAuth confiné API↔Core · aucune donnée OAuth Agents/Skills/Runtime/Host) · **28a en cours** · 28b bloquée · pas de P29 auto | **Accepted** | 2026-07-19 |
 | — | Phase **28a livrée** (Vault + OAuth LinkedIn + API/UI) — attente validation PO ; social-publish dry-run only · **28b bloquée** · pas de P29 auto | Accepted | 2026-07-19 |
 | — | Phase **28a validée** (Vault + OAuth LinkedIn + API/UI) ; plaintext jamais persisté · OAuth API↔Core only · social-publish dry-run · Kernel public inchangé · **28b pack dédié avant code** · pas de P29 | Accepted | 2026-07-19 |
+| — | Phase 28b pack DY1–DY9 **soumis PO** (`docs/phase-28b-decisions.md`) — social-publish live LinkedIn · dual-mode · token resolve Core · **pas d’implémentation** · pas de P29 auto | Proposed | 2026-07-19 |
+| — | Phase 28b DY1–DY9 **Accepted** (+ amendement **DY2-B** : `CONNECTOR_NOT_CONNECTED` si live sans connexion · pas de fallback dry-run silencieux) · 28b en cours · pas de P29 auto | **Accepted** | 2026-07-19 |
+| — | Phase **28b livrée** (social-publish live LinkedIn) — attente validation PO ; CONNECTOR_NOT_CONNECTED · token Core only · Kernel.tools inchangé · **pas de P29** | Accepted | 2026-07-19 |
+| — | Phase **28b validée** (social-publish live LinkedIn) ; DY2-B CONNECTOR_NOT_CONNECTED · token Core only · Kernel.tools inchangé · Phase 28 clôturée · **P29 pack avant code** | Accepted | 2026-07-19 |
 | [ADR-013](./ADR/013-tenant-secrets-vault-oauth-connectors.md) | Tenant Secrets Vault + OAuth Connectors (LinkedIn · dual-mode · 28a/28b · OAuth API↔Core only) | **Accepted** | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |

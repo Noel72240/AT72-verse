@@ -1,6 +1,6 @@
 /**
- * skill.social-scheduling — Phase 27a / DU3
- * Plans social posts via Kernel.tools social-publish (dry-run) + Kernel.llm.
+ * skill.social-scheduling — Phase 27a / 28b
+ * Plans social posts via Kernel.tools social-publish (dry-run default; mode=live opt-in).
  */
 import type { KernelClient, SkillExecuteContext, SkillSpec } from "@at72-verse/contracts";
 import { validateDataAgainstJsonSchema } from "@at72-verse/contracts";
@@ -10,9 +10,9 @@ export const SKILL_ID = "skill.social-scheduling" as const;
 
 export const SOCIAL_SCHEDULING_SKILL_SPEC: SkillSpec = {
   id: SKILL_ID,
-  version: "0.1.0",
+  version: "0.2.0",
   name: "Social Scheduling",
-  description: "Reusable social calendar / post planning via dry-run social-publish + LLM.",
+  description: "Social post planning via social-publish (dry-run default; live opt-in).",
   input_schema: {
     type: "object",
     additionalProperties: false,
@@ -22,12 +22,13 @@ export const SOCIAL_SCHEDULING_SKILL_SPEC: SkillSpec = {
       platform: { type: "string" },
       formality: { type: "string" },
       rules: { type: "string" },
+      mode: { type: "string", enum: ["dry_run", "live"] },
     },
   },
   output_schema: {
     type: "object",
     additionalProperties: false,
-    required: ["content", "posts", "dry_run"],
+    required: ["content", "posts"],
     properties: {
       content: { type: "string", minLength: 1 },
       posts: {
@@ -38,6 +39,8 @@ export const SOCIAL_SCHEDULING_SKILL_SPEC: SkillSpec = {
         },
       },
       dry_run: { type: "object", additionalProperties: true },
+      publish_result: { type: "object", additionalProperties: true },
+      mode: { type: "string" },
     },
   },
   default_model_profile: "creative-balanced",
@@ -74,18 +77,20 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
     typeof ctx.input.rules === "string" && ctx.input.rules.trim().length > 0
       ? ctx.input.rules.trim()
       : null;
+  const mode = ctx.input.mode === "live" ? "live" : "dry_run";
 
-  const dryRun = await ctx.kernel.tools.execute({
+  const toolResult = await ctx.kernel.tools.execute({
     tool_id: "social-publish",
     input: {
       platform,
       content: brief.slice(0, 500),
-      scheduled_at: "2026-07-20T09:00:00.000Z",
+      ...(mode === "dry_run" ? { scheduled_at: "2026-07-20T09:00:00.000Z" } : {}),
+      mode,
     },
   });
 
   const systemParts = [
-    "You are a social media planner. Propose a short post calendar from the brief and dry-run intent.",
+    "You are a social media planner. Propose a short post calendar from the brief and publish intent.",
   ];
   if (formality) systemParts.push(`Formality: ${formality}.`);
   if (rules) systemParts.push(`Rules:\n${rules}`);
@@ -98,7 +103,7 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
         role: "user",
         content: [
           `Platform: ${platform}`,
-          `Dry-run intent: ${JSON.stringify(dryRun.output)}`,
+          `Publish result: ${JSON.stringify(toolResult.output)}`,
           `Brief:\n${brief}`,
         ].join("\n"),
       },
@@ -113,10 +118,13 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
       {
         platform,
         body: content.slice(0, 280),
-        scheduled_at: "2026-07-20T09:00:00.000Z",
+        ...(mode === "dry_run" ? { scheduled_at: "2026-07-20T09:00:00.000Z" } : {}),
       },
     ],
-    dry_run: dryRun.output,
+    mode,
+    ...(mode === "live"
+      ? { publish_result: toolResult.output }
+      : { dry_run: toolResult.output }),
   };
 
   requireValid(SOCIAL_SCHEDULING_SKILL_SPEC.output_schema, output, "output");

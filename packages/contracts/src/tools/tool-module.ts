@@ -11,6 +11,14 @@ export type ToolExecuteContext = {
   workspace_id: string;
   run_id: string;
   agent_id: string;
+  /**
+   * Ephemeral OAuth material injected by Core ToolRuntime only (Phase 28b / ADR-013).
+   * Never set by Agents/Skills. Never persist, log, or publish on the bus.
+   */
+  oauth?: {
+    provider: string;
+    access_token: string;
+  };
 };
 
 /**

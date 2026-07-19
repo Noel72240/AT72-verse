@@ -9,7 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Phase 28a — Vault + OAuth LinkedIn** — **validée PO (2026-07-19)** — lot 1/2 · **28b bloquée** (pack décisions dédié requis)
+- **Phase 28b — social-publish live LinkedIn** — **validée PO (2026-07-19)** — lot 2/2 · Phase 28 clôturée · **P29 non démarrée**
+  - DY1–DY9 Accepted (+ **DY2-B** : `CONNECTOR_NOT_CONNECTED` si live sans connexion)
+  - Contracts `0.1.21` : `ToolExecuteContext.oauth` (injection Core only)
+  - KernelError `CONNECTOR_NOT_CONNECTED`
+  - ToolRuntime : resolve token via OAuthConnector si `mode:"live"`
+  - `social-publish` dual-mode · member UGC · stub tokens sans réseau
+  - `skill.social-scheduling` + Pulse : flag `mode` (défaut dry-run)
+  - Tests : dry-run · live inject · CONNECTOR_NOT_CONNECTED
+  - **Hors scope 28b :** HITL · cms · multi-provider · schedule live · P29
+- **Phase 28a — Vault + OAuth LinkedIn** — **validée PO (2026-07-19)** — lot 1/2
   - DX\* + ADR-013 Accepted (+ OAuth confiné API↔Core · DX13-B)
   - Contracts `0.1.20` : `ConnectorConnectionPublic`
   - Core : `SecretsVaultPort` · `LocalEncryptedSecretsVault` · `OAuthConnector` · stub LinkedIn

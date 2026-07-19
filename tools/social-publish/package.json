@@ -2,7 +2,7 @@
   "name": "@at72-verse/tool-social-publish",
   "version": "0.1.0",
   "private": true,
-  "description": "Tool plugin: social-publish (Phase 27a dry-run)",
+  "description": "Tool plugin: social-publish (dry-run default · live LinkedIn Phase 28b)",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
@@ -14,7 +14,8 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@at72-verse/contracts": "workspace:*"
+    "@at72-verse/contracts": "workspace:*",
+    "@at72-verse/verse-kernel": "workspace:*"
   },
   "devDependencies": {
     "@at72-verse/config-tsconfig": "workspace:*",

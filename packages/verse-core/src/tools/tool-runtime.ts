@@ -20,6 +20,14 @@ import {
 } from "../registry/package-install-gate.js";
 import type { ToolExecutionAuditPort, ToolExecutionAuditStatus } from "./tool-audit-port.js";
 import type { ToolHostPort } from "./tool-host-port.js";
+import type { OAuthConnector } from "../connectors/oauth-connector.js";
+import type { ConnectorProviderId } from "@at72-verse/contracts";
+
+/** Map oauth tools to connector provider (Phase 28b). */
+function oauthProviderForTool(toolId: string): ConnectorProviderId | null {
+  if (toolId === "social-publish") return "linkedin";
+  return null;
+}
 
 function summarize(value: unknown, max = 500): string {
   try {
@@ -55,12 +63,14 @@ export class ToolRuntime {
   private personaEngine: PersonaEngine;
   private permissionEngine: PermissionEngine;
   private audit: ToolExecutionAuditPort;
+  private oauthConnector: OAuthConnector | undefined;
 
   constructor(options: {
     host?: ToolHostPort;
     personaEngine: PersonaEngine;
     permissionEngine?: PermissionEngine;
     audit?: ToolExecutionAuditPort;
+    oauthConnector?: OAuthConnector;
   }) {
     this.host = options.host;
     this.personaEngine = options.personaEngine;
@@ -70,6 +80,7 @@ export class ToolRuntime {
         /* no-op until host wires audit */
       },
     };
+    this.oauthConnector = options.oauthConnector;
   }
 
   setHost(host: ToolHostPort | undefined): void {
@@ -86,6 +97,10 @@ export class ToolRuntime {
 
   setAudit(audit: ToolExecutionAuditPort): void {
     this.audit = audit;
+  }
+
+  setOAuthConnector(connector: OAuthConnector | undefined): void {
+    this.oauthConnector = connector;
   }
 
   async listAvailable(context: KernelContext): Promise<string[]> {
@@ -227,6 +242,59 @@ export class ToolRuntime {
 
     let output: Record<string, unknown>;
     try {
+      const wantsLive = request.input.mode === "live";
+      let oauth: { provider: string; access_token: string } | undefined;
+
+      if (wantsLive) {
+        if (spec.auth?.type !== "oauth") {
+          status = "invalid_input";
+          errorMsg = "mode live requires an oauth tool";
+          await finish();
+          throw new KernelError("INVALID_INPUT", errorMsg, {
+            details: { tool_id: request.tool_id },
+          });
+        }
+        const provider = oauthProviderForTool(request.tool_id);
+        if (!provider || !this.oauthConnector) {
+          status = "failed";
+          errorMsg = "CONNECTOR_NOT_CONNECTED";
+          await finish();
+          throw new KernelError(
+            "CONNECTOR_NOT_CONNECTED",
+            "No valid OAuth connector for live tool execution",
+            {
+              details: {
+                tool_id: request.tool_id,
+                provider: provider ?? null,
+                code: "CONNECTOR_NOT_CONNECTED",
+              },
+            },
+          );
+        }
+        const accessToken = await this.oauthConnector.resolveAccessToken({
+          workspace_id: context.workspace_id,
+          provider,
+        });
+        if (!accessToken) {
+          status = "failed";
+          errorMsg = "CONNECTOR_NOT_CONNECTED";
+          await finish();
+          throw new KernelError(
+            "CONNECTOR_NOT_CONNECTED",
+            "OAuth connector missing, invalid, or revoked",
+            {
+              details: {
+                tool_id: request.tool_id,
+                provider,
+                workspace_id: context.workspace_id,
+                code: "CONNECTOR_NOT_CONNECTED",
+              },
+            },
+          );
+        }
+        oauth = { provider, access_token: accessToken };
+      }
+
       output = await withTimeout(
         this.host.execute(request.tool_id, {
           input: request.input,
@@ -234,6 +302,7 @@ export class ToolRuntime {
           workspace_id: context.workspace_id,
           run_id: context.run_id,
           agent_id: context.agent_id,
+          ...(oauth ? { oauth } : {}),
         }),
         spec.timeout_ms,
         request.tool_id,

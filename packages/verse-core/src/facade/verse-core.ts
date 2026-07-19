@@ -116,6 +116,7 @@ export class VerseCore {
       personaEngine: this.personaEngine,
       permissionEngine: this.permissionEngine,
       audit: options.toolAudit,
+      oauthConnector: this.oauthConnector,
     });
 
     this.adapters = {
@@ -202,6 +203,12 @@ export class VerseCore {
 
   getOAuthConnector(): OAuthConnector {
     return this.oauthConnector;
+  }
+
+  /** Keep ToolRuntime OAuth wiring in sync if connector instance is replaced. */
+  setOAuthConnector(connector: OAuthConnector): void {
+    this.oauthConnector = connector;
+    this.toolRuntime.setOAuthConnector(connector);
   }
 
   async health(): Promise<VerseCoreHealthReport> {

@@ -146,3 +146,145 @@ describe("ToolRuntime Phase 19", () => {
     assert.deepEqual(listed, ["web-search"]);
   });
 });
+
+describe("ToolRuntime Phase 28b OAuth live", () => {
+  const SOCIAL_SPEC: ToolSpec = {
+    id: "social-publish",
+    version: "0.2.0",
+    description: "test",
+    input_schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["platform", "content"],
+      properties: {
+        platform: { type: "string" },
+        content: { type: "string" },
+        mode: { type: "string" },
+      },
+    },
+    output_schema: {
+      type: "object",
+      additionalProperties: true,
+      required: ["mode", "platform"],
+      properties: {
+        mode: { type: "string" },
+        platform: { type: "string" },
+        published: { type: "boolean" },
+        would_publish: { type: "boolean" },
+        external_post_id: { type: "string" },
+        published_at: { type: "string" },
+      },
+    },
+    side_effect: true,
+    auth: { type: "oauth" },
+    timeout_ms: 5000,
+    permission: "tool.execute:social-publish",
+  };
+
+  function socialHost(capture: { oauth?: unknown }): ToolHostPort {
+    return {
+      async resolve(id) {
+        if (id !== "social-publish") throw new KernelError("NOT_FOUND", id);
+        return { id, version: SOCIAL_SPEC.version, spec: SOCIAL_SPEC };
+      },
+      async execute(_id, c) {
+        capture.oauth = c.oauth;
+        if (c.input.mode === "live") {
+          return {
+            mode: "live",
+            published: true,
+            platform: "linkedin",
+            external_post_id: "urn:li:share:x",
+            published_at: "2026-07-19T12:00:00.000Z",
+          };
+        }
+        return {
+          mode: "dry_run",
+          would_publish: true,
+          platform: "linkedin",
+          content: String(c.input.content),
+        };
+      },
+      async listRegistered() {
+        return ["social-publish"];
+      },
+    };
+  }
+
+  it("mode live without connector throws CONNECTOR_NOT_CONNECTED", async () => {
+    const capture: { oauth?: unknown } = {};
+    const runtime = new ToolRuntime({
+      host: socialHost(capture),
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+    });
+    await assert.rejects(
+      () =>
+        runtime.execute(
+          {
+            tool_id: "social-publish",
+            input: { platform: "linkedin", content: "hi", mode: "live" },
+          },
+          ctx({
+            agent_id: "pulse",
+            tools_allowlist: ["social-publish"],
+          }),
+        ),
+      (err: unknown) =>
+        err instanceof KernelError && err.code === "CONNECTOR_NOT_CONNECTED",
+    );
+    assert.equal(capture.oauth, undefined);
+  });
+
+  it("mode live with resolveAccessToken injects oauth into tool ctx", async () => {
+    const capture: { oauth?: unknown } = {};
+    const runtime = new ToolRuntime({
+      host: socialHost(capture),
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+      oauthConnector: {
+        async resolveAccessToken() {
+          return "stub-access-live";
+        },
+      } as import("../connectors/oauth-connector.js").OAuthConnector,
+    });
+    const result = await runtime.execute(
+      {
+        tool_id: "social-publish",
+        input: { platform: "linkedin", content: "hi", mode: "live" },
+      },
+      ctx({
+        agent_id: "pulse",
+        tools_allowlist: ["social-publish"],
+      }),
+    );
+    assert.equal(result.output.mode, "live");
+    assert.equal((capture.oauth as { access_token: string }).access_token, "stub-access-live");
+  });
+
+  it("without mode live does not resolve oauth", async () => {
+    const capture: { oauth?: unknown } = {};
+    const runtime = new ToolRuntime({
+      host: socialHost(capture),
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+      oauthConnector: {
+        async resolveAccessToken() {
+          throw new Error("should not be called");
+        },
+      } as import("../connectors/oauth-connector.js").OAuthConnector,
+    });
+    const result = await runtime.execute(
+      {
+        tool_id: "social-publish",
+        input: { platform: "linkedin", content: "hi" },
+      },
+      ctx({
+        agent_id: "pulse",
+        tools_allowlist: ["social-publish"],
+      }),
+    );
+    assert.equal(result.output.mode, "dry_run");
+    assert.equal(capture.oauth, undefined);
+  });
+});

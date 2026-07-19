@@ -1302,6 +1302,9 @@ importers:
       '@at72-verse/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*

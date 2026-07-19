@@ -13,6 +13,7 @@ export type KernelErrorCode =
   | "RATE_LIMIT"
   | "AUTH"
   | "TIMEOUT"
+  | "CONNECTOR_NOT_CONNECTED"
   | "INTERNAL";
 
 export class KernelError extends Error {
