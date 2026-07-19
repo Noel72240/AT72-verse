@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireOrgRole } from "../rbac/rbac.decorators.js";
@@ -8,7 +8,7 @@ import { PrivacyService } from "./privacy.service.js";
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class PrivacyController {
-  constructor(private readonly privacy: PrivacyService) {}
+  constructor(@Inject(PrivacyService) private readonly privacy: PrivacyService) {}
 
   @Post("me/export")
   exportMe(@Req() req: RequestWithAuth) {

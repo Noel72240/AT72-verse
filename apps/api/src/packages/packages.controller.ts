@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -26,7 +27,7 @@ type PinBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class PackagesController {
-  constructor(private readonly packages: PackagesService) {}
+  constructor(@Inject(PackagesService) private readonly packages: PackagesService) {}
 
   @Get("packages")
   listCatalog(@Req() _req: RequestWithAuth) {

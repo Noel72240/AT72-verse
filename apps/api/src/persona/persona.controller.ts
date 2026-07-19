@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Put, Req, UseGuards } from "@nestjs/common";
 import type { PersonaSpecPatch } from "@at72-verse/contracts";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
@@ -13,7 +13,7 @@ type PatchBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class PersonaController {
-  constructor(private readonly personas: PersonaService) {}
+  constructor(@Inject(PersonaService) private readonly personas: PersonaService) {}
 
   @Get("workspaces/:workspaceId/personas/:agentId")
   @RequireWorkspaceMember("VIEWER")

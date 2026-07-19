@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -49,7 +50,7 @@ type PatchStatusBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class RunsController {
-  constructor(private readonly runs: RunsService) {}
+  constructor(@Inject(RunsService) private readonly runs: RunsService) {}
 
   @Post("workspaces/:workspaceId/conversations")
   @RequireWorkspaceMember("EDITOR")

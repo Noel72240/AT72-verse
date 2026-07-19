@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Inject, Param, Query, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireWorkspaceMember } from "../rbac/rbac.decorators.js";
@@ -8,7 +8,7 @@ import { ToolsService } from "./tools.service.js";
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class ToolsController {
-  constructor(private readonly tools: ToolsService) {}
+  constructor(@Inject(ToolsService) private readonly tools: ToolsService) {}
 
   @Get("workspaces/:workspaceId/tool-executions")
   @RequireWorkspaceMember("VIEWER")

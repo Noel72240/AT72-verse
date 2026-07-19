@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireOrgRole, RequireWorkspaceMember } from "../rbac/rbac.decorators.js";
@@ -13,7 +13,7 @@ type CreateWorkspaceBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class WorkspacesController {
-  constructor(private readonly workspaces: WorkspacesService) {}
+  constructor(@Inject(WorkspacesService) private readonly workspaces: WorkspacesService) {}
 
   @Post("organizations/:orgId/workspaces")
   @RequireOrgRole("EDITOR")

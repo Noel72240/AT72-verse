@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireOrgRole } from "../rbac/rbac.decorators.js";
@@ -18,7 +18,7 @@ type ManageBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class BillingController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(@Inject(BillingService) private readonly billing: BillingService) {}
 
   @Get("organizations/:orgId/billing")
   @RequireOrgRole("ADMIN")

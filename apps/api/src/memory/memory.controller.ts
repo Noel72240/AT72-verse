@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Post,
   Query,
@@ -18,7 +19,7 @@ import { MemoryService } from "./memory.service.js";
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class MemoryController {
-  constructor(private readonly memory: MemoryService) {}
+  constructor(@Inject(MemoryService) private readonly memory: MemoryService) {}
 
   /** RBAC enforced in service (conversation → workspace membership). */
   @Get("conversations/:conversationId/memory")

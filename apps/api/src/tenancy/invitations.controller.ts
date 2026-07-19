@@ -3,6 +3,7 @@ import {
   Controller,
   HttpException,
   HttpStatus,
+  Inject,
   Param,
   Post,
   Req,
@@ -24,7 +25,7 @@ type CreateInvitationBody = {
 
 @Controller()
 export class InvitationsController {
-  constructor(private readonly invitations: InvitationsService) {}
+  constructor(@Inject(InvitationsService) private readonly invitations: InvitationsService) {}
 
   @Post("organizations/:orgId/invitations")
   @UseGuards(AuthGuard, RbacGuard)

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Put, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireOrgRole } from "../rbac/rbac.decorators.js";
@@ -17,7 +17,7 @@ type PutBody = {
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class QuotasController {
-  constructor(private readonly quotas: QuotasService) {}
+  constructor(@Inject(QuotasService) private readonly quotas: QuotasService) {}
 
   @Get("organizations/:orgId/quotas")
   @RequireOrgRole("VIEWER")

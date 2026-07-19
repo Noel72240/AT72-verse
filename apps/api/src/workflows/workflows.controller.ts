@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireWorkspaceMember } from "../rbac/rbac.decorators.js";
@@ -8,7 +8,7 @@ import { WorkflowsService } from "./workflows.service.js";
 @Controller()
 @UseGuards(AuthGuard, RbacGuard)
 export class WorkflowsController {
-  constructor(private readonly workflows: WorkflowsService) {}
+  constructor(@Inject(WorkflowsService) private readonly workflows: WorkflowsService) {}
 
   @Get("workflows")
   list() {

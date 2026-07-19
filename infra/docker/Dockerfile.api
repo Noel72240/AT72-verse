@@ -19,12 +19,11 @@ COPY tools ./tools
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @at72-verse/db generate
-# Emit Nest JS with decorator metadata (tsx alone breaks constructor DI on Railway)
-RUN pnpm --filter @at72-verse/api build
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 
 EXPOSE 3001
 
+# tsx loads workspace TS packages; Nest DI uses explicit @Inject (esbuild has no emitDecoratorMetadata)
 CMD ["sh", "-c", "echo '[api] start…' && exec pnpm --filter @at72-verse/api start"]

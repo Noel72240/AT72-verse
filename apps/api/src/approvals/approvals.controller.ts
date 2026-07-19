@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
 import { RequireWorkspaceMember } from "../rbac/rbac.decorators.js";
@@ -11,7 +11,7 @@ type DecideBody = {
 
 @Controller()
 export class ApprovalsController {
-  constructor(private readonly approvals: ApprovalsService) {}
+  constructor(@Inject(ApprovalsService) private readonly approvals: ApprovalsService) {}
 
   @Get("workspaces/:workspaceId/approvals")
   @UseGuards(AuthGuard, RbacGuard)

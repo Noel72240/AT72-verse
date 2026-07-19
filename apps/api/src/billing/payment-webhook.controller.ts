@@ -2,6 +2,7 @@ import {
   Controller,
   Headers,
   HttpCode,
+  Inject,
   Post,
   Req,
   type RawBodyRequest,
@@ -14,7 +15,7 @@ import { BillingService } from "./billing.service.js";
  */
 @Controller("webhooks")
 export class PaymentWebhookController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(@Inject(BillingService) private readonly billing: BillingService) {}
 
   @Post("payments")
   @HttpCode(200)

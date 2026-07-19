@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Post,
   Query,
@@ -18,7 +19,7 @@ import { ConnectorsService } from "./connectors.service.js";
 
 @Controller()
 export class ConnectorsController {
-  constructor(private readonly connectors: ConnectorsService) {}
+  constructor(@Inject(ConnectorsService) private readonly connectors: ConnectorsService) {}
 
   @Get("workspaces/:workspaceId/connectors")
   @UseGuards(AuthGuard, RbacGuard)
