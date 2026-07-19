@@ -17,7 +17,7 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
-      build: "meta-scopes-public-profile-only",
+      build: "meta-dual-fb-ig-connect",
       meta_oauth_scopes: ["public_profile"],
     };
   }
@@ -36,7 +36,7 @@ export class HealthController {
         organizations,
         memberships,
         packages,
-        build: "meta-scopes-public-profile-only",
+        build: "meta-dual-fb-ig-connect",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
