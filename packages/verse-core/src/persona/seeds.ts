@@ -6,10 +6,12 @@ import type { PersonaSpec } from "@at72-verse/contracts";
 import adamDefault from "./seeds/persona.adam.default.json" with { type: "json" };
 import astraDefault from "./seeds/persona.astra.default.json" with { type: "json" };
 import echoDefault from "./seeds/persona.echo.default.json" with { type: "json" };
+import nexusDefault from "./seeds/persona.nexus.default.json" with { type: "json" };
 import novaDefault from "./seeds/persona.nova.default.json" with { type: "json" };
 import orionDefault from "./seeds/persona.orion.default.json" with { type: "json" };
 import pixelDefault from "./seeds/persona.pixel.default.json" with { type: "json" };
 import pulseDefault from "./seeds/persona.pulse.default.json" with { type: "json" };
+import vegaDefault from "./seeds/persona.vega.default.json" with { type: "json" };
 
 /** Minimal platform base merged first (deterministic). */
 export const SYSTEM_PERSONA_BASE: PersonaSpec = {
@@ -36,4 +38,6 @@ export const FIRST_PARTY_PERSONAS: ReadonlyMap<string, PersonaSpec> = new Map([
   [(pixelDefault as PersonaSpec).id, pixelDefault as PersonaSpec],
   [(pulseDefault as PersonaSpec).id, pulseDefault as PersonaSpec],
   [(echoDefault as PersonaSpec).id, echoDefault as PersonaSpec],
+  [(nexusDefault as PersonaSpec).id, nexusDefault as PersonaSpec],
+  [(vegaDefault as PersonaSpec).id, vegaDefault as PersonaSpec],
 ]);

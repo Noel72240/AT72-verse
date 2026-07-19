@@ -1,5 +1,24 @@
 ﻿{
   "id": "vega",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Vega",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Strategic watch specialist — via skill.watch-brief only.",
+  "kind": "specialist",
+  "default_persona": "persona.vega.default",
+  "skills": ["skill.watch-brief"],
+  "tools_allowlist": ["web-search"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "can_consult": ["orion"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["veille", "watch", "intelligence", "concurrents", "signals"],
+    "priority": 50
+  }
 }

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 27b — Nexus + Vega** — **validée PO (2026-07-19)** — lot 2/3 vers J17 (**J17 non atteint**)
+  - DV1–DV9 Accepted (+ Vega consult Orion · http-request dry-run · web-search défaut on · Nexus plan-only)
+  - Contracts `0.1.18` : seeds `pkg.nexus` / `pkg.vega` · `skill.automation-plan` · `skill.watch-brief` · `http-request`
+  - Nexus : Persona → automation-plan → http-request dry-run (`would_request`, `executes: false`)
+  - Vega : Persona → watch-brief → web-search (défaut on) · `can_consult: ["orion"]`
+  - Runtime Agent Registry only · pas de logique métier Runtime/Core/Host · zéro réseau réel · dry-run déterministe
+  - Tests golden Nexus + Vega · Runtime/Core OK
+  - **Hors scope 27b :** 27c · OAuth live · workflows · exécution d’automations
 - **Phase 27a — Pulse + Echo** — **validée PO (2026-07-19)** — lot 1/3 vers J17 (**J17 non atteint**)
   - DU1–DU13 Accepted (+ dry-run only · translation différée · Persona→Skills→Kernel→Tools)
   - Contracts `0.1.17` : seeds `pkg.pulse` / `pkg.echo` · skills · tools · grants

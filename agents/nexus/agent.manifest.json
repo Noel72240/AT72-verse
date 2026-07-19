@@ -1,5 +1,24 @@
 ﻿{
   "id": "nexus",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Nexus",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Automation planner — plans via skill.automation-plan only; never executes.",
+  "kind": "specialist",
+  "default_persona": "persona.nexus.default",
+  "skills": ["skill.automation-plan"],
+  "tools_allowlist": ["http-request"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "can_consult": [],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["automation", "webhook", "integration", "trigger", "zap"],
+    "priority": 50
+  }
 }

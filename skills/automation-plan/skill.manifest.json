@@ -1,0 +1,10 @@
+{
+  "id": "skill.automation-plan",
+  "version": "0.1.0",
+  "name": "Automation Plan",
+  "description": "Reusable automation planning via Kernel (plan only, no execution).",
+  "default_model_profile": "analytic-strict",
+  "tags": ["automation", "plan"],
+  "eval_suite": "evals/automation-plan-v0",
+  "permissions": ["skill.invoke:automation-plan"]
+}

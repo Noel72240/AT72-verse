@@ -482,7 +482,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Scope creep · intégrations réelles trop tôt |
 | **Critères de validation** | 12 agents listés/activables · 1 golden path chacun (même mocké) · registry coherent |
 | **Complexité** | **XL** |
-| **Statut** | **27a validée (2026-07-19)** — Pulse+Echo · **27b décisions à valider** · 27c non démarrée · **J17 non atteint** |
+| **Statut** | **27a+27b validées (2026-07-19)** — Pulse+Echo · Nexus+Vega · **27c décisions à valider** · **J17 non atteint** |
 
 > **Sous-phases recommandées :**  
 > **27a** Pulse+Echo (**L**) · **27b** Nexus+Vega (**L**) · **27c** Neo+Kira+Nyx (**L**)

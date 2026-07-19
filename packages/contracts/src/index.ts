@@ -197,4 +197,4 @@ export {
 } from "./validation/validate-json-schema.js";
 
 /** Contracts package semver — freeze v0 (+ Workflows Phase 26). */
-export const CONTRACTS_VERSION = "0.1.17" as const;
+export const CONTRACTS_VERSION = "0.1.18" as const;

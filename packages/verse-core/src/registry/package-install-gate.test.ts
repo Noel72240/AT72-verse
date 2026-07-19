@@ -19,6 +19,8 @@ describe("PackageInstallGate Phase 22", () => {
     assert.equal(isCapabilityInstalled(snap, "agent", "orion"), true);
     assert.equal(isCapabilityInstalled(snap, "agent", "pulse"), true);
     assert.equal(isCapabilityInstalled(snap, "agent", "echo"), true);
+    assert.equal(isCapabilityInstalled(snap, "agent", "nexus"), true);
+    assert.equal(isCapabilityInstalled(snap, "agent", "vega"), true);
     assert.equal(isCapabilityInstalled(snap, "agent", "kira"), false);
   });
 

@@ -1454,4 +1454,121 @@ describe("agent-runtime Phase 12/14/15", () => {
     assert.equal(result?.dry_run?.would_sync, true);
     await runtime.stop();
   });
+
+  it("Nexus completes automation plan golden path with dry-run (Phase 27b)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-nexus",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111170";
+    const traceId = "55555555-5555-4555-8555-555555555620";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-nexus",
+          trace_id: traceId,
+          goal: "Planifier une automation webhook pour les leads formulaire",
+          target_url: "https://example.com/hooks/leads",
+          method: "POST",
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("nexus") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("nexus"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as {
+      content?: string;
+      executes?: boolean;
+      dry_run?: { mode?: string; would_request?: boolean };
+    };
+    assert.equal(typeof result?.content, "string");
+    assert.equal(result?.executes, false);
+    assert.equal(result?.dry_run?.mode, "dry_run");
+    assert.equal(result?.dry_run?.would_request, true);
+    await runtime.stop();
+  });
+
+  it("Vega completes watch brief golden path with web-search default on (Phase 27b)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-vega",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111171";
+    const traceId = "55555555-5555-4555-8555-555555555621";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-vega",
+          trace_id: traceId,
+          goal: "Veille concurrentielle sur le messaging SaaS multi-agents",
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("vega") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("vega"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as { content?: string; signals?: string[] };
+    assert.equal(typeof result?.content, "string");
+    assert.ok((result?.content?.length ?? 0) > 0);
+    assert.ok(Array.isArray(result?.signals));
+    await runtime.stop();
+  });
 });

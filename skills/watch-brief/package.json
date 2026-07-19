@@ -1,8 +1,8 @@
 {
-  "name": "@at72-verse/agent-vega",
+  "name": "@at72-verse/skill-watch-brief",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent plugin: Vega (specialist, Phase 27b)",
+  "description": "Skill plugin: watch-brief (Phase 27b)",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

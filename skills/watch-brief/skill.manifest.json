@@ -1,0 +1,10 @@
+{
+  "id": "skill.watch-brief",
+  "version": "0.1.0",
+  "name": "Watch Brief",
+  "description": "Reusable strategic watch brief via Kernel.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["watch", "intelligence"],
+  "eval_suite": "evals/watch-brief-v0",
+  "permissions": ["skill.invoke:watch-brief"]
+}

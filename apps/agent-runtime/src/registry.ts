@@ -14,15 +14,22 @@ import type {
 import { handleTask as adamHandleTask, ADAM_AGENT_ID } from "@at72-verse/agent-adam";
 import { handleTask as astraHandleTask, ASTRA_AGENT_ID } from "@at72-verse/agent-astra";
 import { handleTask as echoHandleTask, ECHO_AGENT_ID } from "@at72-verse/agent-echo";
+import { handleTask as nexusHandleTask, NEXUS_AGENT_ID } from "@at72-verse/agent-nexus";
 import { handleTask as novaHandleTask, NOVA_AGENT_ID } from "@at72-verse/agent-nova";
 import { handleTask as orionHandleTask, ORION_AGENT_ID } from "@at72-verse/agent-orion";
 import { handleTask as pixelHandleTask, PIXEL_AGENT_ID } from "@at72-verse/agent-pixel";
 import { handleTask as pulseHandleTask, PULSE_AGENT_ID } from "@at72-verse/agent-pulse";
+import { handleTask as vegaHandleTask, VEGA_AGENT_ID } from "@at72-verse/agent-vega";
 import {
   ANALYSIS_SKILL_SPEC,
   execute as analysisExecute,
   SKILL_ID as ANALYSIS_SKILL_ID,
 } from "@at72-verse/skill-analysis";
+import {
+  AUTOMATION_PLAN_SKILL_SPEC,
+  execute as automationPlanExecute,
+  SKILL_ID as AUTOMATION_PLAN_SKILL_ID,
+} from "@at72-verse/skill-automation-plan";
 import {
   execute as imageGenSkillExecute,
   IMAGE_GENERATION_SKILL_SPEC,
@@ -44,6 +51,11 @@ import {
   SOCIAL_SCHEDULING_SKILL_SPEC,
 } from "@at72-verse/skill-social-scheduling";
 import {
+  execute as watchBriefExecute,
+  SKILL_ID as WATCH_BRIEF_SKILL_ID,
+  WATCH_BRIEF_SKILL_SPEC,
+} from "@at72-verse/skill-watch-brief";
+import {
   execute as writingExecute,
   SKILL_ID as WRITING_SKILL_ID,
   WRITING_SKILL_SPEC,
@@ -58,6 +70,11 @@ import {
   GMB_SYNC_TOOL_SPEC,
   TOOL_ID as GMB_SYNC_TOOL_ID,
 } from "@at72-verse/tool-gmb-sync";
+import {
+  execute as httpRequestExecute,
+  HTTP_REQUEST_TOOL_SPEC,
+  TOOL_ID as HTTP_REQUEST_TOOL_ID,
+} from "@at72-verse/tool-http-request";
 import {
   execute as imageGenToolExecute,
   IMAGE_GENERATE_TOOL_SPEC,
@@ -181,6 +198,24 @@ export function createDefaultAgentRegistry(): AgentRegistry {
         handleTask: echoHandleTask,
       },
     ],
+    [
+      NEXUS_AGENT_ID,
+      {
+        id: NEXUS_AGENT_ID,
+        tools_allowlist: ["http-request"],
+        can_consult: [],
+        handleTask: nexusHandleTask,
+      },
+    ],
+    [
+      VEGA_AGENT_ID,
+      {
+        id: VEGA_AGENT_ID,
+        tools_allowlist: ["web-search"],
+        can_consult: ["orion"],
+        handleTask: vegaHandleTask,
+      },
+    ],
   ]);
 }
 
@@ -240,6 +275,24 @@ export function createDefaultSkillRegistry(): SkillRegistry {
         execute: localPresenceExecute,
       },
     ],
+    [
+      AUTOMATION_PLAN_SKILL_ID,
+      {
+        id: AUTOMATION_PLAN_SKILL_ID,
+        version: AUTOMATION_PLAN_SKILL_SPEC.version,
+        spec: AUTOMATION_PLAN_SKILL_SPEC,
+        execute: automationPlanExecute,
+      },
+    ],
+    [
+      WATCH_BRIEF_SKILL_ID,
+      {
+        id: WATCH_BRIEF_SKILL_ID,
+        version: WATCH_BRIEF_SKILL_SPEC.version,
+        spec: WATCH_BRIEF_SKILL_SPEC,
+        execute: watchBriefExecute,
+      },
+    ],
   ]);
 }
 
@@ -297,6 +350,15 @@ export function createDefaultToolRegistry(): ToolRegistry {
         version: GMB_SYNC_TOOL_SPEC.version,
         spec: GMB_SYNC_TOOL_SPEC,
         execute: gmbSyncExecute,
+      },
+    ],
+    [
+      HTTP_REQUEST_TOOL_ID,
+      {
+        id: HTTP_REQUEST_TOOL_ID,
+        version: HTTP_REQUEST_TOOL_SPEC.version,
+        spec: HTTP_REQUEST_TOOL_SPEC,
+        execute: httpRequestExecute,
       },
     ],
   ]);
