@@ -188,35 +188,58 @@ export class OAuthConnector {
       code: input.code.trim(),
     });
 
-    const existing = await this.store.getByWorkspaceProvider(
-      pending.workspace_id,
-      pending.provider,
-    );
-    const id = existing?.id ?? randomUUID();
-    const vault_ref = `connector:${id}`;
+    // Meta Login is one Facebook dialog for both FB + IG — persist both connectors.
+    const providersToSave: ConnectorProviderId[] =
+      pending.provider === "facebook" || pending.provider === "instagram"
+        ? ["facebook", "instagram"]
+        : [pending.provider];
+
     const now = new Date().toISOString();
+    let primary: ConnectorConnectionPublic | null = null;
 
-    await this.vault.put({
-      organization_id: pending.organization_id,
-      workspace_id: pending.workspace_id,
-      ref: vault_ref,
-      plaintext: serializeTokenBundle(tokens),
-    });
+    for (const provider of providersToSave) {
+      const existing = await this.store.getByWorkspaceProvider(
+        pending.workspace_id,
+        provider,
+      );
+      const id = existing?.id ?? randomUUID();
+      const vault_ref = `connector:${id}`;
 
-    const record = await this.store.upsert({
-      id,
+      await this.vault.put({
+        organization_id: pending.organization_id,
+        workspace_id: pending.workspace_id,
+        ref: vault_ref,
+        plaintext: serializeTokenBundle(tokens),
+      });
+
+      const record = await this.store.upsert({
+        id,
+        organization_id: pending.organization_id,
+        workspace_id: pending.workspace_id,
+        provider,
+        status: "connected",
+        vault_ref,
+        external_account_hint: tokens.external_account_hint ?? null,
+        connected_at: now,
+        revoked_at: null,
+        updated_at: now,
+      });
+      const publicRow = toPublicConnection(record);
+      if (provider === pending.provider) primary = publicRow;
+    }
+
+    return primary ?? toPublicConnection({
+      id: randomUUID(),
       organization_id: pending.organization_id,
       workspace_id: pending.workspace_id,
       provider: pending.provider,
       status: "connected",
-      vault_ref,
+      vault_ref: "",
       external_account_hint: tokens.external_account_hint ?? null,
       connected_at: now,
       revoked_at: null,
       updated_at: now,
     });
-
-    return toPublicConnection(record);
   }
 
   async list(workspace_id: string): Promise<ConnectorConnectionPublic[]> {

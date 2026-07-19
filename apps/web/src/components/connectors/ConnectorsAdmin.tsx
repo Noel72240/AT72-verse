@@ -29,12 +29,12 @@ const PROVIDERS = [
   {
     id: "facebook" as const,
     label: "Facebook",
-    hint: "Connexion Meta. Publication live Facebook arrive bientôt (simulation OK).",
+    hint: "Connexion Meta (compte Leon / admin Allotech72). Live publication bientôt.",
   },
   {
     id: "instagram" as const,
     label: "Instagram",
-    hint: "Compte Pro lié à une Page Facebook. Live Instagram arrive bientôt.",
+    hint: "Meta ouvre Facebook Login (normal). Une connexion Meta active FB + IG.",
   },
 ];
 
@@ -55,8 +55,15 @@ export function ConnectorsAdmin() {
       return;
     }
     const params = new URLSearchParams(window.location.search);
-    if (params.get("connected")) {
-      setNotice(`Connecté : ${params.get("connected")} (${params.get("status") ?? "ok"})`);
+    const connected = params.get("connected");
+    if (connected) {
+      const label =
+        connected === "facebook" || connected === "instagram"
+          ? "Facebook + Instagram (Meta)"
+          : connected;
+      setNotice(`Connecté : ${label} (${params.get("status") ?? "ok"})`);
+      // Drop Facebook's `#_=_` noise and keep a clean URL after reload.
+      window.history.replaceState({}, "", "/connectors");
     }
     void (async () => {
       try {
@@ -111,6 +118,13 @@ export function ConnectorsAdmin() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // After OAuth redirect, re-fetch once workspace is ready (avoids empty « Non connecté » flash).
+  useEffect(() => {
+    if (!workspaceId || !notice) return;
+    const t = window.setTimeout(() => void load(), 300);
+    return () => window.clearTimeout(t);
+  }, [workspaceId, notice, load]);
 
   async function connectProvider(provider: (typeof PROVIDERS)[number]["id"]) {
     if (!workspaceId) return;
@@ -171,8 +185,9 @@ export function ConnectorsAdmin() {
 
       <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Connecteurs</h1>
       <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-        Connecte LinkedIn, Facebook ou Instagram. Sans connexion, « publie » reste une simulation.
-        LinkedIn permet déjà la publication live ; Meta (FB/IG) : connexion maintenant, live bientôt.
+        LinkedIn = connexion LinkedIn. Facebook et Instagram = <strong>Meta</strong> : le bouton
+        Instagram ouvre aussi l&apos;écran Facebook Login (compte Leon) — c&apos;est normal. Une
+        connexion Meta active les deux.
       </p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>

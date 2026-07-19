@@ -93,22 +93,27 @@ describe("OAuthConnector Phase 28a", () => {
     assert.equal(token, "stub-meta-access-fb-code");
   });
 
-  it("connect instagram via Meta stub", async () => {
+  it("connect facebook via Meta stub also marks instagram connected", async () => {
     const { StubMetaOAuthProvider } = await import("./meta-oauth-provider.js");
     const oauth = new OAuthConnector({
-      vault: new LocalEncryptedSecretsVault({ masterKey: "d".repeat(64) }),
+      vault: new LocalEncryptedSecretsVault({ masterKey: "c".repeat(64) }),
       store: new InMemoryConnectorStore(),
-      providers: { instagram: new StubMetaOAuthProvider("instagram") },
+      providers: {
+        facebook: new StubMetaOAuthProvider("facebook"),
+        instagram: new StubMetaOAuthProvider("instagram"),
+      },
+      meta: { app_id: "meta-app", app_secret: "meta-secret" },
     });
     const start = await oauth.startAuthorize({
       organization_id: org,
       workspace_id: ws,
-      provider: "instagram",
-      redirect_uri: "http://localhost/cb",
+      provider: "facebook",
+      redirect_uri: "http://localhost:3001/connectors/oauth/callback",
     });
     const state = new URL(start.authorize_url).searchParams.get("state")!;
-    const connected = await oauth.handleCallback({ code: "ig-code", state });
-    assert.equal(connected.provider, "instagram");
-    assert.match(String(connected.external_account_hint), /instagram/);
+    const connected = await oauth.handleCallback({ code: "fb-both", state });
+    assert.equal(connected.provider, "facebook");
+    assert.equal((await oauth.getStatus(ws, "facebook"))?.status, "connected");
+    assert.equal((await oauth.getStatus(ws, "instagram"))?.status, "connected");
   });
 });
