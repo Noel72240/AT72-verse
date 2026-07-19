@@ -128,6 +128,30 @@ export function ChatApp() {
       const ac = new AbortController();
       abortRef.current = ac;
 
+      const finishIfTerminal = async (status: string) => {
+        if (status !== "completed" && status !== "failed") return false;
+        setRunStatus(status);
+        if (status === "failed") {
+          try {
+            const run = await (await import("@/lib/api")).getRun(runId);
+            const err = run.error;
+            const errMsg =
+              typeof err === "string"
+                ? err
+                : err && typeof err === "object" && "message" in err && typeof err.message === "string"
+                  ? err.message
+                  : "Run failed";
+            setError(errMsg);
+          } catch {
+            setError("Run failed");
+          }
+        }
+        await loadMessages(cid);
+        setSteps(await listSteps(runId));
+        await refreshCost();
+        return true;
+      };
+
       const connect = async () => {
         try {
           // Reconstitute from REST first (reconnect-safe)
@@ -135,7 +159,7 @@ export function ChatApp() {
             listSteps(runId),
             (await import("@/lib/api")).getRun(runId),
           ]);
-          setSteps(freshSteps);
+          setSteps(Array.isArray(freshSteps) ? freshSteps : freshSteps ? [freshSteps] : []);
           setRunStatus(run.status);
           const tid =
             run.metadata && typeof run.metadata.trace_id === "string"
@@ -143,52 +167,82 @@ export function ChatApp() {
               : null;
           if (tid) setRunTraceId(tid);
           await refreshCost();
-          if (run.status === "completed" || run.status === "failed") {
-            await loadMessages(cid);
-            return;
-          }
+          if (await finishIfTerminal(run.status)) return;
 
-          const res = await openRunStream(runId, ac.signal);
-          for await (const ev of readSseStream(res)) {
-            if (ac.signal.aborted) break;
-            if (ev.event === "heartbeat") continue;
-            if (ev.event === "snapshot") {
-              const snapSteps = ev.data.steps as ApiRunStep[] | undefined;
-              if (Array.isArray(snapSteps)) setSteps(snapSteps);
-              const runObj = ev.data.run as { status?: string } | undefined;
-              if (runObj?.status) setRunStatus(runObj.status);
-            }
-            if (ev.event === "step_created" && ev.data.step) {
-              const step = ev.data.step as ApiRunStep;
-              setSteps((prev) => {
-                if (prev.some((s) => s.id === step.id)) return prev;
-                return [...prev, step].sort((a, b) => a.seq - b.seq);
-              });
-            }
-            if (ev.event === "status_changed") {
-              const runObj = ev.data.run as { status?: string } | undefined;
-              if (runObj?.status) setRunStatus(runObj.status);
-            }
-            if (ev.event === "run_completed" || ev.event === "run_failed") {
-              const runObj = ev.data.run as {
-                status?: string;
-                error?: { message?: string } | string | null;
-              } | undefined;
-              if (runObj?.status) setRunStatus(runObj.status);
-              if (ev.event === "run_failed") {
-                const errMsg =
-                  typeof runObj?.error === "string"
-                    ? runObj.error
-                    : runObj?.error && typeof runObj.error.message === "string"
-                      ? runObj.error.message
-                      : "Run failed";
-                setError(errMsg);
-              }
-              await loadMessages(cid);
-              setSteps(await listSteps(runId));
-              await refreshCost();
+          // Poll REST while SSE is open — Railway/proxies often drop or delay bus events.
+          const poll = window.setInterval(() => {
+            if (ac.signal.aborted) {
+              window.clearInterval(poll);
               return;
             }
+            void (async () => {
+              try {
+                const latest = await (await import("@/lib/api")).getRun(runId);
+                setRunStatus(latest.status);
+                setSteps(await listSteps(runId));
+                if (latest.status === "completed" || latest.status === "failed") {
+                  window.clearInterval(poll);
+                  ac.abort();
+                  await finishIfTerminal(latest.status);
+                }
+              } catch {
+                /* keep polling */
+              }
+            })();
+          }, 2000);
+
+          try {
+            const res = await openRunStream(runId, ac.signal);
+            for await (const ev of readSseStream(res)) {
+              if (ac.signal.aborted) break;
+              if (ev.event === "heartbeat") continue;
+              if (ev.event === "snapshot") {
+                const snapSteps = ev.data.steps as ApiRunStep[] | undefined;
+                if (Array.isArray(snapSteps)) setSteps(snapSteps);
+                const runObj = ev.data.run as { status?: string } | undefined;
+                if (runObj?.status) {
+                  setRunStatus(runObj.status);
+                  if (await finishIfTerminal(runObj.status)) {
+                    window.clearInterval(poll);
+                    return;
+                  }
+                }
+              }
+              if (ev.event === "step_created" && ev.data.step) {
+                const step = ev.data.step as ApiRunStep;
+                setSteps((prev) => {
+                  if (prev.some((s) => s.id === step.id)) return prev;
+                  return [...prev, step].sort((a, b) => a.seq - b.seq);
+                });
+              }
+              if (ev.event === "status_changed") {
+                const runObj = ev.data.run as { status?: string } | undefined;
+                if (runObj?.status) setRunStatus(runObj.status);
+              }
+              if (ev.event === "run_completed" || ev.event === "run_failed") {
+                window.clearInterval(poll);
+                const runObj = ev.data.run as {
+                  status?: string;
+                  error?: { message?: string } | string | null;
+                } | undefined;
+                if (runObj?.status) setRunStatus(runObj.status);
+                if (ev.event === "run_failed") {
+                  const errMsg =
+                    typeof runObj?.error === "string"
+                      ? runObj.error
+                      : runObj?.error && typeof runObj.error.message === "string"
+                        ? runObj.error.message
+                        : "Run failed";
+                  setError(errMsg);
+                }
+                await loadMessages(cid);
+                setSteps(await listSteps(runId));
+                await refreshCost();
+                return;
+              }
+            }
+          } finally {
+            window.clearInterval(poll);
           }
         } catch (e) {
           if (ac.signal.aborted) return;
