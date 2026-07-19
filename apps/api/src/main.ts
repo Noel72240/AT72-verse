@@ -5,6 +5,7 @@ import { getMetrics, initObservability } from "@at72-verse/observability";
 import { setToolMetricsHook } from "@at72-verse/verse-core";
 import { AppModule } from "./app.module.js";
 
+/** Railway deploy trigger — Nest API bootstrap. */
 async function bootstrap(): Promise<void> {
   initObservability({ serviceName: "at72-verse-api" });
   const metrics = getMetrics();
