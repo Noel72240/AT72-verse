@@ -5,7 +5,7 @@ import { getMetrics, initObservability } from "@at72-verse/observability";
 import { setToolMetricsHook } from "@at72-verse/verse-core";
 import { AppModule } from "./app.module.js";
 
-/** Nest API bootstrap — migrate via /api-entrypoint.sh on Railway. */
+/** Nest API bootstrap — Railway Docker CMD runs prisma migrate then start. */
 async function bootstrap(): Promise<void> {
   initObservability({ serviceName: "at72-verse-api" });
   const metrics = getMetrics();
