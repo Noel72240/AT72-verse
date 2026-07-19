@@ -99,6 +99,63 @@ export async function fetchMetaPagesForToken(
     });
   }
 
+  // Business Pages (AlloTech72 in BM) often omit from me/accounts — recover via granular_scopes.
+  if (meta_pages.length === 0 && opts?.app_id && opts?.app_secret) {
+    try {
+      const dbg = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/debug_token`);
+      dbg.searchParams.set("input_token", token);
+      dbg.searchParams.set("access_token", `${opts.app_id}|${opts.app_secret}`);
+      const dbgRes = await fetchImpl(dbg.toString());
+      if (dbgRes.ok) {
+        const dbgJson = (await dbgRes.json()) as {
+          data?: {
+            granular_scopes?: Array<{ scope?: string; target_ids?: string[] }>;
+          };
+        };
+        const pageIds = new Set<string>();
+        for (const g of dbgJson.data?.granular_scopes ?? []) {
+          if (
+            g.scope === "pages_show_list" ||
+            g.scope === "pages_manage_posts" ||
+            g.scope === "pages_read_engagement" ||
+            g.scope === "pages_manage_engagement"
+          ) {
+            for (const id of g.target_ids ?? []) {
+              if (id) pageIds.add(id);
+            }
+          }
+        }
+        for (const pageId of pageIds) {
+          const pt = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}`);
+          pt.searchParams.set(
+            "fields",
+            "id,name,access_token,instagram_business_account{id}",
+          );
+          pt.searchParams.set("access_token", token);
+          const ptRes = await fetchImpl(pt.toString());
+          if (!ptRes.ok) continue;
+          const ptJson = (await ptRes.json()) as {
+            id?: string;
+            name?: string;
+            access_token?: string;
+            instagram_business_account?: { id?: string };
+          };
+          if (!ptJson.id || !ptJson.name || !ptJson.access_token) continue;
+          meta_pages.push({
+            id: ptJson.id,
+            name: ptJson.name,
+            access_token: ptJson.access_token,
+            ...(ptJson.instagram_business_account?.id
+              ? { ig_user_id: ptJson.instagram_business_account.id }
+              : {}),
+          });
+        }
+      }
+    } catch {
+      /* fall through to diagnostic */
+    }
+  }
+
   const base: Partial<OAuthTokenBundle> & { pages_diagnostic?: string } = {
     meta_pages,
     ...(token !== userAccessToken ? { access_token: token } : {}),
@@ -107,7 +164,7 @@ export async function fetchMetaPagesForToken(
   if (meta_pages.length === 0) {
     let pages_diagnostic = raw.length
       ? `${raw.length} Page(s) listée(s) sans token (permissions Pages incomplètes)`
-      : "Aucune Page renvoyée par Meta (me/accounts vide)";
+      : "Aucune Page (me/accounts vide — Page Business : ajoute business_management puis reconnecte)";
     try {
       const permUrl = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/me/permissions`);
       permUrl.searchParams.set("access_token", token);
@@ -144,9 +201,10 @@ export async function fetchMetaPagesForToken(
 }
 
 const META_SCOPES: Record<"facebook" | "instagram", readonly string[]> = {
-  // Requires +Ajouter in Meta App → Facebook Login → Permissions (dev/tester OK).
+  // business_management required for Pages linked to Meta Business Manager.
   facebook: [
     "public_profile",
+    "business_management",
     "pages_show_list",
     "pages_manage_posts",
     "pages_read_engagement",
@@ -155,6 +213,7 @@ const META_SCOPES: Record<"facebook" | "instagram", readonly string[]> = {
   ],
   instagram: [
     "public_profile",
+    "business_management",
     "pages_show_list",
     "pages_manage_posts",
     "pages_read_engagement",
