@@ -22,6 +22,7 @@ import {
   runWithPersonaOverrides,
 } from "@at72-verse/verse-core";
 import { createKernelClient, KernelError } from "@at72-verse/verse-kernel";
+import type { PrismaClient } from "@at72-verse/db";
 import {
   normalizeAgentTaskResult,
   type AgentPlugin,
@@ -59,6 +60,8 @@ export type CreateOrchestrationHostOptions = {
    */
   maxDelegationDepth?: number;
   allowList?: Readonly<Record<string, readonly string[]>>;
+  /** When set, persist child RunStep before in-process execution (avoids tool audit FK races). */
+  prisma?: PrismaClient;
 };
 
 /**
@@ -123,6 +126,20 @@ export function createOrchestrationHost(
       }, {
         organizationId: request.organization_id,
         workspaceId: request.workspace_id,
+      });
+
+      await ensureChildRunStep(options.prisma, {
+        runId: request.run_id,
+        stepId: childStepId,
+        parentStepId: request.parent_step_id,
+        agentId: request.target_agent,
+        name: `${request.target_agent}.delegated`,
+        kind: "agent",
+        input: {
+          task: request.task,
+          delegated_by: request.caller_agent_id,
+          trace_id: request.trace_id,
+        },
       });
 
       return executeAgentInProcess({
@@ -202,6 +219,20 @@ export function createOrchestrationHost(
       }, {
         organizationId: request.organization_id,
         workspaceId: request.workspace_id,
+      });
+
+      await ensureChildRunStep(options.prisma, {
+        runId: request.run_id,
+        stepId: childStepId,
+        parentStepId: request.parent_step_id,
+        agentId: request.target_agent,
+        name: `${request.target_agent}.consulted`,
+        kind: "consult",
+        input: {
+          question: request.question,
+          consulted_by: request.caller_agent_id,
+          trace_id: request.trace_id,
+        },
       });
 
       const outcome = await executeAgentInProcess({
@@ -483,6 +514,56 @@ async function executeAgentInProcess(input: {
       }
     },
   );
+}
+
+async function ensureChildRunStep(
+  prisma: PrismaClient | undefined,
+  input: {
+    runId: string;
+    stepId: string;
+    parentStepId: string | null;
+    agentId: string;
+    name: string;
+    kind: string;
+    input: Record<string, unknown>;
+  },
+): Promise<void> {
+  if (!prisma) return;
+
+  const existing = await prisma.runStep.findUnique({ where: { id: input.stepId } });
+  if (existing) return;
+
+  const run = await prisma.run.findUnique({ where: { id: input.runId } });
+  if (!run) return;
+
+  let parentStepId = input.parentStepId;
+  if (parentStepId) {
+    const parent = await prisma.runStep.findUnique({ where: { id: parentStepId } });
+    if (!parent || parent.runId !== run.id) {
+      parentStepId = null;
+    }
+  }
+
+  const agg = await prisma.runStep.aggregate({
+    where: { runId: run.id },
+    _max: { seq: true },
+  });
+  const seq = (agg._max.seq ?? 0) + 1;
+
+  await prisma.runStep.create({
+    data: {
+      id: input.stepId,
+      organizationId: run.organizationId,
+      runId: run.id,
+      parentStepId,
+      seq,
+      name: input.name,
+      kind: input.kind,
+      agentId: input.agentId,
+      status: "running",
+      input: input.input as never,
+    },
+  });
 }
 
 async function publishTaskDelegated(

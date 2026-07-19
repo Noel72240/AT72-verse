@@ -170,8 +170,20 @@ export function ChatApp() {
               if (runObj?.status) setRunStatus(runObj.status);
             }
             if (ev.event === "run_completed" || ev.event === "run_failed") {
-              const runObj = ev.data.run as { status?: string } | undefined;
+              const runObj = ev.data.run as {
+                status?: string;
+                error?: { message?: string } | string | null;
+              } | undefined;
               if (runObj?.status) setRunStatus(runObj.status);
+              if (ev.event === "run_failed") {
+                const errMsg =
+                  typeof runObj?.error === "string"
+                    ? runObj.error
+                    : runObj?.error && typeof runObj.error.message === "string"
+                      ? runObj.error.message
+                      : "Run failed";
+                setError(errMsg);
+              }
               await loadMessages(cid);
               setSteps(await listSteps(runId));
               await refreshCost();

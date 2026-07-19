@@ -31,13 +31,24 @@ export function createPrismaToolExecutionAudit(
 ): ToolExecutionAuditRepository {
   return {
     async record(entry: ToolExecutionAuditEntry): Promise<void> {
+      // In-process delegation can run tools before the API projector inserts RunStep.
+      let stepId = entry.step_id;
+      if (stepId) {
+        const step = await prisma.runStep.findUnique({
+          where: { id: stepId },
+          select: { id: true },
+        });
+        if (!step) {
+          stepId = null;
+        }
+      }
       await prisma.toolExecution.create({
         data: {
           id: entry.execution_id,
           organizationId: entry.organization_id,
           workspaceId: entry.workspace_id,
           runId: entry.run_id,
-          stepId: entry.step_id,
+          stepId,
           traceId: entry.trace_id,
           agentId: entry.agent_id,
           toolId: entry.tool_id,

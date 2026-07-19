@@ -17,7 +17,7 @@ import { VERSE_CORE } from "./core.tokens.js";
  * MVP deploy: run Adam (and siblings) inside the API process so a single Railway
  * service can execute chat runs. Disable with VERSE_EMBED_AGENT_RUNTIME=0 when a
  * dedicated agent-runtime service is deployed (ADR-001 / ADR-002 target).
- * Redeploy bump: OpenAI chat.completions metadata removed in verse-core.
+ * Redeploy bump: fix tool_executions FK race on Adam?Astra delegation.
  */
 @Injectable()
 export class AgentRuntimeHost implements OnModuleInit, OnModuleDestroy {

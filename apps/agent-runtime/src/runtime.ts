@@ -84,6 +84,7 @@ export async function startAgentRuntime(options: StartRuntimeOptions): Promise<R
       bus: options.bus,
       core,
       registry,
+      prisma: options.prisma,
     }),
   );
 
