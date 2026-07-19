@@ -9,6 +9,23 @@ const globalForPrisma = globalThis as typeof globalThis & {
   __at72VersePrisma?: PrismaClient;
 };
 
+/**
+ * Neon sometimes appends channel_binding=require which breaks some Node/Prisma TLS paths.
+ * Prefer sslmode=require only for long-running API hosts (Railway).
+ */
+export function normalizeDatabaseUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    u.searchParams.delete("channel_binding");
+    if (!u.searchParams.get("sslmode")) {
+      u.searchParams.set("sslmode", "require");
+    }
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
 export function createPrismaClient(databaseUrl = process.env.DATABASE_URL): PrismaClient {
   if (!databaseUrl) {
     throw new Error(
@@ -18,7 +35,7 @@ export function createPrismaClient(databaseUrl = process.env.DATABASE_URL): Pris
 
   return new PrismaClient({
     datasources: {
-      db: { url: databaseUrl },
+      db: { url: normalizeDatabaseUrl(databaseUrl) },
     },
   });
 }

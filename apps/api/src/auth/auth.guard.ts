@@ -30,7 +30,14 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    const user = await ensureVerseUser(this.prisma, session);
+    let user;
+    try {
+      user = await ensureVerseUser(this.prisma, session);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[auth] ensureVerseUser failed:", message);
+      throw err;
+    }
     const reqAny = request as RequestWithAuth & { method?: string; url?: string; path?: string };
     if (user.deletedAt && !isRestorePath(reqAny.method ?? "GET", reqAny.url ?? reqAny.path ?? "")) {
       throw new GoneException({
