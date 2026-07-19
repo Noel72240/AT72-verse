@@ -66,25 +66,46 @@ export class OrganizationsService {
           message: "Organization slug already exists",
         });
       }
-      throw err;
+      console.error("[organizations.create]", message);
+      throw new BadRequestException({
+        code: "org_create_failed",
+        message,
+      });
     }
   }
 
   async listForUser(userId: string) {
-    const memberships = await this.prisma.membership.findMany({
-      where: {
-        userId,
-        OR: [
-          { organization: { deletedAt: null } },
-          { role: "OWNER", organization: { deletedAt: { not: null } } },
-        ],
-      },
-      include: { organization: true },
-      orderBy: { createdAt: "asc" },
-    });
-    return memberships.map((m) => ({
-      role: m.role,
-      organization: m.organization,
-    }));
+    try {
+      const memberships = await this.prisma.membership.findMany({
+        where: {
+          userId,
+          OR: [
+            { organization: { deletedAt: null } },
+            { role: "OWNER", organization: { deletedAt: { not: null } } },
+          ],
+        },
+        include: { organization: true },
+        orderBy: { createdAt: "asc" },
+      });
+      return memberships.map((m) => ({
+        role: m.role,
+        organization: {
+          id: m.organization.id,
+          name: m.organization.name,
+          slug: m.organization.slug,
+          planId: m.organization.planId,
+          createdAt: m.organization.createdAt,
+          updatedAt: m.organization.updatedAt,
+          deletedAt: m.organization.deletedAt,
+        },
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[organizations.listForUser]", message);
+      throw new BadRequestException({
+        code: "org_list_failed",
+        message,
+      });
+    }
   }
 }
