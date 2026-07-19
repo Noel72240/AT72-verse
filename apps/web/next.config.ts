@@ -16,13 +16,20 @@ function buildCspReportOnly(): string | null {
     process.env.VERSE_CSP_REPORT_URI ??
     process.env.NEXT_PUBLIC_CSP_REPORT_URI ??
     "http://localhost:3001/csp-report";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  let apiOrigin = "http://localhost:3001";
+  try {
+    apiOrigin = new URL(apiUrl).origin;
+  } catch {
+    /* keep default */
+  }
   // Minimal policy for report-only observation — does not block (Report-Only header).
   return [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
-    "connect-src 'self' http://localhost:3001 https:",
+    `connect-src 'self' ${apiOrigin} https:`,
     "font-src 'self' data:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
