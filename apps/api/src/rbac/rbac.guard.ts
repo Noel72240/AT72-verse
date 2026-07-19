@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
@@ -8,8 +8,8 @@ import { RbacService } from "./rbac.service.js";
 @Injectable()
 export class RbacGuard implements CanActivate {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly rbac: RbacService,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
