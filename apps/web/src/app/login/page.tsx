@@ -26,7 +26,7 @@ export default function LoginPage() {
     <div className="login-page">
       <form className="login-card" onSubmit={(e) => void onSubmit(e)}>
         <h1>AT72 Verse</h1>
-        <p>DevAuth demo login — Clerk seams remain available (ADR-004).</p>
+        <p>Connexion démo (DevAuth). Clerk reste prévu pour plus tard.</p>
         {error ? <div className="error">{error}</div> : null}
         <label htmlFor="email">Email</label>
         <input
@@ -38,7 +38,7 @@ export default function LoginPage() {
           autoComplete="username"
         />
         <button type="submit" disabled={busy}>
-          {busy ? "Signing in…" : "Continue"}
+          {busy ? "Connexion…" : "Continuer"}
         </button>
       </form>
     </div>

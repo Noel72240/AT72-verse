@@ -292,3 +292,50 @@ button {
   margin: auto;
   padding: 2rem;
 }
+
+.bubble.thinking {
+  opacity: 0.85;
+  border: 1px dashed var(--border);
+}
+
+.thinking-dots::after {
+  content: "…";
+  animation: thinking-pulse 1s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.thinking-banner {
+  margin-bottom: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trace-details {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.trace-details summary {
+  cursor: pointer;
+  margin-bottom: 0.35rem;
+}
+
+.trace-details code {
+  color: var(--text);
+  word-break: break-all;
+}

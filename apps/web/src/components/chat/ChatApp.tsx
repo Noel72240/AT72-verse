@@ -341,6 +341,7 @@ export function ChatApp() {
             {orgs.map((o) => (
               <option key={o.organization.id} value={o.organization.id}>
                 {o.organization.name}
+                {o.organization.slug ? ` (${o.organization.slug})` : ""}
               </option>
             ))}
           </select>
@@ -374,7 +375,7 @@ export function ChatApp() {
             padding: "0.35rem 0.65rem",
           }}
         >
-          Log out
+          Déconnexion
         </button>
       </header>
 
@@ -387,25 +388,33 @@ export function ChatApp() {
       <div className="chat-layout">
         <section className="chat-main">
           <div className="messages">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !busy ? (
               <p className="empty">
-                Ask Adam to write something — e.g. « Rédige un post LinkedIn sur AT72 Verse »
+                Dis bonjour à Adam, ou demande par ex. :
+                <br />
+                « Prépare un post Facebook pour Allotech72 »
               </p>
             ) : (
               messages.map((m) => (
                 <div key={m.id} className={`bubble ${m.role}`}>
-                  <div className="meta">{m.role}</div>
+                  <div className="meta">{m.role === "assistant" ? "Adam" : "Toi"}</div>
                   {m.content}
                 </div>
               ))
             )}
+            {busy ? (
+              <div className="bubble assistant thinking">
+                <div className="meta">Adam</div>
+                <span className="thinking-dots">réfléchit</span>
+              </div>
+            ) : null}
             <div ref={bottomRef} />
           </div>
           <div className="composer">
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Message to Adam…"
+              placeholder="Message à Adam…"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -415,13 +424,14 @@ export function ChatApp() {
               disabled={busy}
             />
             <button type="button" disabled={busy || !draft.trim()} onClick={() => void onSend()}>
-              {busy ? "…" : "Send"}
+              {busy ? "…" : "Envoyer"}
             </button>
           </div>
         </section>
         <TimelinePanel
           steps={steps}
           runStatus={runStatus}
+          busy={busy}
           cost={runCost}
           traceId={runTraceId}
           grafanaTraceUrl={
