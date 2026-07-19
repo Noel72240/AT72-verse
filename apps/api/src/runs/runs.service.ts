@@ -15,6 +15,7 @@ import { BUS } from "../core/bus.tokens.js";
 import { GrantsService } from "../grants/grants.service.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { PersonaService } from "../persona/persona.service.js";
+import { QuotasService } from "../quotas/quotas.service.js";
 import { RbacService } from "../rbac/rbac.service.js";
 import { dispatchAgentTask } from "./runs.dispatch.js";
 import { publishRunEvent } from "./runs.events.js";
@@ -94,6 +95,7 @@ export class RunsService {
     private readonly personas: PersonaService,
     private readonly grants: GrantsService,
     private readonly packages: PackagesService,
+    private readonly quotas: QuotasService,
   ) {}
 
   async createConversation(input: CreateConversationInput) {
@@ -181,6 +183,8 @@ export class RunsService {
       input.workspaceId,
       "EDITOR",
     );
+
+    await this.quotas.assertCanCreateRun(membership.organizationId);
 
     if (input.conversationId) {
       const conversation = await this.prisma.conversation.findUnique({

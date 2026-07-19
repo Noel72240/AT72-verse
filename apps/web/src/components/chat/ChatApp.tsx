@@ -252,6 +252,9 @@ export function ChatApp() {
         <a href="/packages" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Packages
         </a>
+        <a href="/quotas" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Quotas
+        </a>
         <label>
           Org{" "}
           <select

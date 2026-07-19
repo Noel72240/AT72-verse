@@ -36,6 +36,13 @@ model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   slug      String   @unique
+  /// Technical plan (Phase 31 / EB2-A). Not a Stripe product.
+  planId    String   @default("free") @map("plan_id")
+  /// Optional numeric overrides — null = use plan defaults (EB3bis: always numeric effective).
+  quotaRunsPerMonth       Int? @map("quota_runs_per_month")
+  quotaTokensPerMonth     Int? @map("quota_tokens_per_month")
+  quotaMaxAgentsInstalled Int? @map("quota_max_agents_installed")
+  quotaApiRpm             Int? @map("quota_api_rpm")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -59,6 +66,7 @@ model Organization {
   vaultSecrets     VaultSecretRow[]
   connectorConnections ConnectorConnectionRow[]
   approvalRequests ApprovalRequestRow[]
+  quotaAuditEntries QuotaAuditEntryRow[]
 
   @@map("organizations")
 }
@@ -648,4 +656,21 @@ model ApprovalRequestRow {
   @@index([status])
   @@index([expiresAt])
   @@map("approval_requests")
+}
+
+/// Lightweight quota override audit (Phase 31 / EB7bis) — not full RGPD audit (P32).
+model QuotaAuditEntryRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  actorUserId    String   @map("actor_user_id") @db.Uuid
+  previousValue  Json     @map("previous_value")
+  newValue       Json     @map("new_value")
+  reason         String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("quota_audit_entries")
 }

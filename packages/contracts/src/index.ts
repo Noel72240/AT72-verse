@@ -194,6 +194,16 @@ export type {
   ApprovalStatus,
 } from "./approvals/approval-request.js";
 
+export type {
+  PlanId,
+  QuotaDimension,
+  OrgQuotaLimits,
+  OrgQuotaUsage,
+  QuotaExceededPublic,
+  QuotaAuditEntryPublic,
+} from "./quotas/plan-quotas.js";
+export { PLAN_QUOTA_DEFAULTS } from "./quotas/plan-quotas.js";
+
 export {
   CONTRACT_EXAMPLE_FILES,
   CONTRACT_SCHEMA_FILES,
@@ -208,5 +218,5 @@ export {
   type JsonSchemaValidationResult,
 } from "./validation/validate-json-schema.js";
 
-/** Contracts package semver — freeze v0 (+ Workflows Phase 26). */
-export const CONTRACTS_VERSION = "0.1.22" as const;
+/** Contracts package semver — freeze v0 (+ Quotas Phase 31). */
+export const CONTRACTS_VERSION = "0.1.23" as const;

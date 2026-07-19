@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 31 — Quotas / plans / rate limits** — **validée PO (2026-07-19)** (`docs/phase-31-decisions.md` · `docs/phase-31-validation.md`) · **Phase 32 = pack décisions dédié** (pas d’auto)
+  - Pack EB\* Accepted (+ **EB3bis** : limites numériques only · **EB7bis** : audit actor/prev/new/ts/reason)
+  - Contracts `0.1.23` : `PLAN_QUOTA_DEFAULTS` · `OrgQuotaLimits` · `QuotaAuditEntryPublic`
+  - Prisma `plan_id` + overrides org · `quota_audit_entries`
+  - Enforcement createRun / install agent · Redis RPM · 429 `QUOTA_EXCEEDED` / `RATE_LIMITED`
+  - API `GET|PUT /organizations/:orgId/quotas` · audit · Web `/quotas`
+  - Metrics `verse_quota_exceeded_total` · `verse_rate_limited_total`
+  - **Hors scope 31 :** P32 RGPD · Stripe (P34)
 - **Phase 30 — Observabilité production-ready** — **validée PO (2026-07-19)** — **Phase 31 = pack décisions dédié** (pas d’auto)
   - Pack EA\* Accepted (+ **EA5bis** : aucun texte libre user dans OTel/logs · **EA10bis** : overhead &lt; 5 %)
   - `@at72-verse/observability` : redact · metrics Prometheus · tracing OTLP optionnel · kernel sink

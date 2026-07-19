@@ -38,4 +38,4 @@ Le test CI **échoue** si overhead ≥ 5 % (EA10bis).
 
 ## Hors scope (gel)
 
-Phase 31 quotas · Phase 32 RGPD · Phase 33 pentest · vendors APM obligatoires.
+Phase 32 RGPD · Phase 33 pentest · vendors APM obligatoires.

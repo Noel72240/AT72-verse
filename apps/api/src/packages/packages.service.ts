@@ -16,6 +16,7 @@ import {
   type PrismaClient,
 } from "@at72-verse/db";
 import { PRISMA } from "../auth/auth.tokens.js";
+import { QuotasService } from "../quotas/quotas.service.js";
 import { RbacService } from "../rbac/rbac.service.js";
 
 @Injectable()
@@ -23,6 +24,7 @@ export class PackagesService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly rbac: RbacService,
+    private readonly quotas: QuotasService,
   ) {}
 
   async listCatalogPublic() {
@@ -49,6 +51,7 @@ export class PackagesService {
         message: "package_id required",
       });
     }
+    await this.quotas.assertCanInstallAgent(organizationId, input.package_id.trim());
     const workspaceId =
       input.workspace_id ??
       (
@@ -72,6 +75,7 @@ export class PackagesService {
       });
       return { install };
     } catch (err) {
+      if (err instanceof BadRequestException) throw err;
       throw new BadRequestException({
         code: "invalid_input",
         message: err instanceof Error ? err.message : String(err),

@@ -68,5 +68,17 @@ export {
 export { createPrismaSecretsVaultCipherStore } from "./vault-store.js";
 export { createPrismaConnectorStore } from "./connector-store.js";
 export { createPrismaApprovalStore } from "./approval-store.js";
+export {
+  assertAgentsQuota,
+  assertRunsQuota,
+  assertTokensQuota,
+  getOrgQuotaLimits,
+  getOrgQuotaUsage,
+  isPlanId,
+  listQuotaAudit,
+  resolveOrgQuotaLimits,
+  updateOrgQuotas,
+  utcMonthWindow,
+} from "./quotas.js";
 
 export const packageName = "@at72-verse/db" as const;

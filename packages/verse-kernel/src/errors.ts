@@ -16,6 +16,7 @@ export type KernelErrorCode =
   | "CONNECTOR_NOT_CONNECTED"
   | "WAITING_APPROVAL"
   | "APPROVAL_ALREADY_CONSUMED"
+  | "QUOTA_EXCEEDED"
   | "INTERNAL";
 
 export class KernelError extends Error {

@@ -5,14 +5,15 @@
 import {
   Controller,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Req,
   Res,
   UseGuards,
+  forwardRef,
 } from "@nestjs/common";
 import type { Response } from "express";
-import { Inject } from "@nestjs/common";
 import type { Bus, BusUnsubscribe } from "@at72-verse/bus";
 import { runsTopic } from "@at72-verse/bus";
 import { AuthGuard } from "../auth/auth.guard.js";
@@ -28,7 +29,7 @@ const STREAM_TOPICS = ["created", "step_created", "status_changed"] as const;
 @UseGuards(AuthGuard, RbacGuard)
 export class RunsStreamController {
   constructor(
-    private readonly runs: RunsService,
+    @Inject(forwardRef(() => RunsService)) private readonly runs: RunsService,
     @Inject(BUS) private readonly bus: Bus,
   ) {}
 

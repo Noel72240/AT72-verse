@@ -550,6 +550,65 @@ export async function pinOrganizationPackage(
   });
 }
 
+export type ApiOrgQuotaLimits = {
+  plan_id: "free" | "pro" | "enterprise";
+  runs_per_month: number;
+  tokens_per_month: number;
+  max_agents_installed: number;
+  api_rpm: number;
+};
+
+export type ApiOrgQuotaUsage = {
+  runs_this_month: number;
+  tokens_this_month: number;
+  agents_installed: number;
+};
+
+export type ApiOrgQuotaStatus = {
+  limits: ApiOrgQuotaLimits;
+  usage: ApiOrgQuotaUsage;
+  reset_at: string;
+};
+
+export type ApiQuotaAuditEntry = {
+  id: string;
+  organization_id: string;
+  actor_user_id: string;
+  previous_value: ApiOrgQuotaLimits;
+  new_value: ApiOrgQuotaLimits;
+  reason: string | null;
+  created_at: string;
+};
+
+export async function getOrganizationQuotas(
+  organizationId: string,
+): Promise<ApiOrgQuotaStatus> {
+  return apiFetch(`/organizations/${organizationId}/quotas`);
+}
+
+export async function putOrganizationQuotas(
+  organizationId: string,
+  body: {
+    plan_id?: string;
+    runs_per_month?: number | null;
+    tokens_per_month?: number | null;
+    max_agents_installed?: number | null;
+    api_rpm?: number | null;
+    reason?: string | null;
+  },
+): Promise<{ limits: ApiOrgQuotaLimits; audit: ApiQuotaAuditEntry }> {
+  return apiFetch(`/organizations/${organizationId}/quotas`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function listOrganizationQuotaAudit(
+  organizationId: string,
+): Promise<{ entries: ApiQuotaAuditEntry[] }> {
+  return apiFetch(`/organizations/${organizationId}/quotas/audit`);
+}
+
 export type ApiWorkflowDefinition = {
   id: string;
   version: string;

@@ -103,6 +103,8 @@ export class MetricsRegistry {
   readonly toolExecute = new Counter("verse_tool_execute_total", "Tool execute outcomes");
   readonly dlqEnqueue = new Counter("verse_bus_dlq_enqueue_total", "Bus DLQ enqueue count");
   readonly kernelReject = new Counter("verse_kernel_reject_total", "Kernel FORBIDDEN/reject count");
+  readonly quotaExceeded = new Counter("verse_quota_exceeded_total", "Quota exceeded events");
+  readonly rateLimited = new Counter("verse_rate_limited_total", "API rate limit events");
 
   renderPrometheus(): string {
     return [
@@ -113,6 +115,8 @@ export class MetricsRegistry {
       this.toolExecute.render(),
       this.dlqEnqueue.render(),
       this.kernelReject.render(),
+      this.quotaExceeded.render(),
+      this.rateLimited.render(),
       "",
     ].join("\n");
   }

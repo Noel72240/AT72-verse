@@ -550,6 +550,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Bypass quotas · UX frustrante |
 | **Critères de validation** | Dépassement quota → erreur claire · admin peut ajuster quota tenant test |
 | **Complexité** | **M** |
+| **Statut** | **validée PO (2026-07-19)** — EB\* + EB3bis + EB7bis · **P32 = pack décisions dédié** |
 
 ---
 

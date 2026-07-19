@@ -101,6 +101,16 @@ export function PackagesAdmin() {
       });
       await load();
     } catch (e) {
+      if (e instanceof ApiError && e.body && typeof e.body === "object") {
+        const body = e.body as Record<string, unknown>;
+        if (body.code === "QUOTA_EXCEEDED" || body.code === "RATE_LIMITED") {
+          const hint =
+            typeof body.upgrade_hint === "string" ? ` — ${body.upgrade_hint}` : "";
+          setError(`${String(body.message ?? e.message)}${hint}`);
+          setBusy(false);
+          return;
+        }
+      }
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
       setBusy(false);
     }
@@ -161,6 +171,9 @@ export function PackagesAdmin() {
         </a>
         <a href="/packages" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
           Packages
+        </a>
+        <a href="/quotas" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Quotas
         </a>
       </nav>
 
