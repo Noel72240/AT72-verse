@@ -20,12 +20,15 @@ export class HealthController {
     };
   }
 
-  /** DB connectivity + users table probe (deploy diagnostics). */
+  /** DB connectivity + schema probe (deploy diagnostics). */
   @Get("db")
   async dbHealth() {
     try {
       const users = await this.prisma.user.count();
-      return { status: "ok", users };
+      const organizations = await this.prisma.organization.count();
+      const memberships = await this.prisma.membership.count();
+      const packages = await this.prisma.package.count();
+      return { status: "ok", users, organizations, memberships, packages, build: "992a192+" };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { status: "error", message };
