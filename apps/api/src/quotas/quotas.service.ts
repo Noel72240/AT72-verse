@@ -26,6 +26,7 @@ import {
 } from "@at72-verse/db";
 import { getMetrics } from "@at72-verse/observability";
 import { PRISMA } from "../auth/auth.tokens.js";
+import { BillingService } from "../billing/billing.service.js";
 import { RbacService } from "../rbac/rbac.service.js";
 import { checkOrgApiRpm } from "./rate-limit.redis.js";
 
@@ -55,6 +56,7 @@ export class QuotasService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly rbac: RbacService,
+    private readonly billing: BillingService,
   ) {}
 
   async getStatus(organizationId: string, userId: string): Promise<{
@@ -138,8 +140,9 @@ export class QuotasService {
     });
   }
 
-  /** EB4 — before createRun. */
+  /** EB4 + EE7 — before createRun. */
   async assertCanCreateRun(organizationId: string): Promise<void> {
+    await this.billing.assertPaymentAllowsUsage(organizationId);
     const runs = await assertRunsQuota(this.prisma, organizationId);
     if (!runs.ok) {
       throw quotaExceededException(runs);
@@ -151,8 +154,9 @@ export class QuotasService {
     await this.assertApiRpm(organizationId);
   }
 
-  /** EB4 — before installing an agent package. */
+  /** EB4 + EE7 — before installing an agent package. */
   async assertCanInstallAgent(organizationId: string, packageId: string): Promise<void> {
+    await this.billing.assertPaymentAllowsUsage(organizationId);
     const pkg = await this.prisma.package.findUnique({ where: { id: packageId } });
     if (pkg?.kind === "agent") {
       const agents = await assertAgentsQuota(this.prisma, organizationId);

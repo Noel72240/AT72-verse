@@ -28,4 +28,4 @@
 
 ## Hors scope (gel)
 
-Phase 34 Stripe · pentest externe · CSP enforce · WAF.
+Phase 34 Billing & Payment Providers · pentest externe · CSP enforce · WAF.

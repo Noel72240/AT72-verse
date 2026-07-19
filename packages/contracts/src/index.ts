@@ -220,6 +220,17 @@ export {
   EXPORT_ARTIFACT_TTL_HOURS,
 } from "./privacy/gdpr.js";
 
+export type {
+  PaymentProviderId,
+  BillingStatus,
+  OrgBillingPublic,
+  BillingInvoicePublic,
+  PaymentWebhookEventType,
+  PaymentWebhookEvent,
+  PaymentProvider,
+} from "./billing/payment-provider.js";
+export { PLAN_PRICE_ENV } from "./billing/payment-provider.js";
+
 export {
   CONTRACT_EXAMPLE_FILES,
   CONTRACT_SCHEMA_FILES,
@@ -234,5 +245,5 @@ export {
   type JsonSchemaValidationResult,
 } from "./validation/validate-json-schema.js";
 
-/** Contracts package semver — freeze v0 (+ Privacy Phase 32). */
-export const CONTRACTS_VERSION = "0.1.24" as const;
+/** Contracts package semver — freeze v0 (+ Billing Phase 34). */
+export const CONTRACTS_VERSION = "0.1.25" as const;

@@ -134,6 +134,9 @@ export function QuotasAdmin() {
         <a href="/quotas" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
           Quotas
         </a>
+        <a href="/billing" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Billing
+        </a>
         <a href="/approvals" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Approvals
         </a>

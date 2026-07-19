@@ -117,6 +117,9 @@ export function PrivacyAdmin() {
         <a href="/quotas" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Quotas
         </a>
+        <a href="/billing" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Billing
+        </a>
         <a href="/privacy" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
           Privacy
         </a>

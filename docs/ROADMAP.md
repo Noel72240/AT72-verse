@@ -47,7 +47,7 @@ Une phase est **Close** uniquement si :
 | **J2 — First Run** | 12–16 | Premier chemin d’exécution agent (**atteint à P12**) · vertical slice LLM/Nova/stream (P13–16) |
 | **J3 — Engines** | 17–22 | Socle LLM / providers (**atteint à P13**) · Persona, Skills, Memory, Tools, Costs (P14 / P17–22) |
 | **J4 — Multi-agent** | 23–27 | Adam + Nova + Skills (**atteint à P14**) · délégation / chat (P15–16) · Squad + fan-out + workflow (P23–27) |
-| **J5 — Platform** | 28–33 | Orchestration Adam→Nova + DAG Runs (**atteint à P15**) · UI chat (P16) · Catalogue / HITL / obs (P28–33) |
+| **J5 — Platform** | 28–33 | **Terminé** · Orchestration Adam→Nova + DAG · UI chat · Catalogue / HITL / obs / hardening (P28–33) |
 | **J6 — SaaS commercial** | 34–40 | First Run UX chat + vertical slice (**atteint à P16**) · Billing / onboarding / hardening / launch (P34–40) |
 | **J7 — Persona Engine** | 17 | Identité agents configurable (**atteint à P17**) · Memory / Tools / Authz / Costs (P18–22) |
 | **J8 — Memory Gateway** | 18 | Mémoire L1/L2 plateforme (**atteint à P18**) · Tools / Authz / Costs (P19–22) |
@@ -578,22 +578,23 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Faux sentiment de sécurité · dettes non corrigées |
 | **Critères de validation** | Rapport pentest interne sans critical ouvert · restore DB testé une fois |
 | **Complexité** | **L** |
-| **Statut** | **validée PO (2026-07-19)** — ED\* + ED5bis + ED6bis + ED8bis · **P34 = pack décisions dédié** · **J5 Platform** |
+| **Statut** | **validée PO (2026-07-19)** — ED\* + ED5bis + ED6bis + ED8bis · **J5 Platform terminé** |
 
-**Jalon J5 atteint — Platform** : plateforme beta sécurisée, multi-agents, intégrations réelles.
+**Jalon J5 atteint — Platform (terminé)** : plateforme beta sécurisée, multi-agents, intégrations réelles. Suite = J6 (billing P34 validée · pack P35 requis).
 
 ---
 
-### Phase 34 — Billing Stripe & abonnements
+### Phase 34 — Billing & Payment Providers
 
 | | |
 |---|---|
-| **Objectifs** | Monétiser (SaaS payant). |
-| **Fonctionnalités** | Stripe Checkout/Customer Portal · webhooks · mapping plan→quotas · invoices · grace period · bloquage soft si unpaid |
-| **Dépendances** | Phase 31 · compte Stripe |
-| **Risques** | Webhooks ratés · fraude · fiscalité |
-| **Critères de validation** | Parcours free→paid→cancel sur staging · quota mis à jour automatiquement · idempotence webhooks |
+| **Objectifs** | Monétiser (SaaS payant) via providers abstraits. |
+| **Fonctionnalités** | `PaymentProvider` · SumUp MVP · checkout/manage · webhooks · mapping plan→quotas · grace · soft-block · UI Billing |
+| **Dépendances** | Phase 31 · compte SumUp (ou mock) |
+| **Risques** | Webhooks ratés · fraude · couplage vendor (mitigé par port) |
+| **Critères de validation** | Parcours free→paid→cancel · quotas maj · idempotence webhooks · métier sans import SumUp |
 | **Complexité** | **L** |
+| **Statut** | **validée PO (2026-07-19)** — EE\* + PaymentProvider/SumUp · **P35 = pack décisions dédié** (pas d’auto) |
 
 ---
 

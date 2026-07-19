@@ -22,6 +22,7 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create(AppModule, {
     logger: ["error", "warn", "log"],
+    rawBody: true,
   });
 
   app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {

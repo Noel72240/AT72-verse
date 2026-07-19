@@ -36,7 +36,7 @@ model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   slug      String   @unique
-  /// Technical plan (Phase 31 / EB2-A). Not a Stripe product.
+  /// Technical plan (Phase 31 / EB2-A). Not a payment-provider product id.
   planId    String   @default("free") @map("plan_id")
   /// Optional numeric overrides — null = use plan defaults (EB3bis: always numeric effective).
   quotaRunsPerMonth       Int? @map("quota_runs_per_month")
@@ -77,6 +77,8 @@ model Organization {
   quotaAuditEntries QuotaAuditEntryRow[]
   auditEvents      AuditEventRow[]
   exportJobs       ExportJobRow[]
+  organizationBilling OrganizationBillingRow?
+  paymentEvents    PaymentEventRow[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -740,4 +742,44 @@ model ExportJobRow {
   @@index([status])
   @@index([expiresAt])
   @@map("export_jobs")
+}
+
+/// Organization billing state (Phase 34) — provider-agnostic.
+model OrganizationBillingRow {
+  id                     String    @id @default(uuid()) @db.Uuid
+  organizationId         String    @unique @map("organization_id") @db.Uuid
+  /// sumup | stripe | …
+  provider               String    @default("sumup")
+  /// active | past_due | canceled | unpaid_blocked | none
+  status                 String    @default("none")
+  providerCustomerId     String?   @map("provider_customer_id")
+  providerSubscriptionId String?   @map("provider_subscription_id")
+  currentPeriodEnd       DateTime? @map("current_period_end") @db.Timestamptz(3)
+  graceUntil             DateTime? @map("grace_until") @db.Timestamptz(3)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([providerCustomerId])
+  @@map("organization_billing")
+}
+
+/// Idempotent payment webhook ledger (Phase 34 / EE5).
+model PaymentEventRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  eventId        String   @unique @map("event_id")
+  organizationId String?  @map("organization_id") @db.Uuid
+  provider       String
+  type           String
+  /// Technical summary only — no PAN / secrets.
+  payloadSummary Json     @default("{}") @map("payload_summary")
+  processedAt    DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([type])
+  @@map("payment_events")
 }

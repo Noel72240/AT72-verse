@@ -691,6 +691,68 @@ export async function putOrganizationRetention(
   });
 }
 
+export type ApiOrgBilling = {
+  organization_id: string;
+  provider: string;
+  status: string;
+  plan_id: string;
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
+  current_period_end: string | null;
+  grace_until: string | null;
+  updated_at: string;
+};
+
+export type ApiBillingInvoice = {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  created_at: string;
+  invoice_url: string | null;
+};
+
+export async function getOrganizationBilling(
+  organizationId: string,
+): Promise<ApiOrgBilling> {
+  return apiFetch(`/organizations/${organizationId}/billing`);
+}
+
+export async function startOrganizationCheckout(
+  organizationId: string,
+  body: { target_plan: "pro" | "enterprise"; success_url?: string; cancel_url?: string },
+): Promise<{ checkout_id: string; checkout_url: string }> {
+  return apiFetch(`/organizations/${organizationId}/billing/checkout`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function openOrganizationBillingPortal(
+  organizationId: string,
+  body?: { return_url?: string },
+): Promise<{ manage_url: string }> {
+  return apiFetch(`/organizations/${organizationId}/billing/portal`, {
+    method: "POST",
+    body: JSON.stringify(body ?? {}),
+  });
+}
+
+export async function cancelOrganizationBilling(
+  organizationId: string,
+): Promise<ApiOrgBilling> {
+  return apiFetch(`/organizations/${organizationId}/billing/cancel`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function listOrganizationInvoices(
+  organizationId: string,
+): Promise<{ invoices: ApiBillingInvoice[] }> {
+  return apiFetch(`/organizations/${organizationId}/billing/invoices`);
+}
+
 export type ApiWorkflowDefinition = {
   id: string;
   version: string;

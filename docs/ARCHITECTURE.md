@@ -1211,9 +1211,10 @@ Accès **uniquement** via adapters Verse Core (jamais depuis agents).
 - `audit_logs`
 
 #### Billing
-- `plans`
-- `subscriptions`
-- `usage_records`
+- `organization_billing` (status provider-agnostic · grace)
+- `payment_events` (webhook ledger idempotent)
+- Plans techniques `free` / `pro` / `enterprise` (quotas) — montants via env, pas d’IDs vendor en métier
+- Port `PaymentProvider` (SumUp MVP · Stripe futur)
 
 ### 15.3 Schéma clé : `runs` / `run_steps`
 

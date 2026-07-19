@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Phase 33 — Hardening / pentest interne** — **validée PO (2026-07-19)** (`docs/phase-33-decisions.md` · `docs/phase-33-validation.md`) · **Phase 34 = pack décisions dédié** (pas d’auto) · **J5 Platform**
+- **Phase 34 — Billing & Payment Providers** — **validée PO (2026-07-19)** (`docs/phase-34-decisions.md` · `docs/phase-34-validation.md`) · **Phase 35 = pack décisions dédié** (pas d’auto)
+  - Pack EE\* Accepted (+ **EE-rename** · **EE-provider** · **EE-sumup** · **EE-config**)
+  - Port `PaymentProvider` · `SumUpProvider` MVP · `StripeProvider` stub
+  - Config `PAYMENT_PROVIDER=sumup` + vars SumUp / montants plans / grace
+  - Prisma `organization_billing` · `payment_events` (idempotence)
+  - API billing + `POST /webhooks/payments` · soft-block 402 `PAYMENT_REQUIRED`
+  - Web `/billing` · contracts `0.1.25`
+  - **Hors scope 34 :** P35 onboarding · Stripe live
+- **Phase 33 — Hardening / pentest interne** — **validée PO (2026-07-19)** (`docs/phase-33-decisions.md` · `docs/phase-33-validation.md`) · **J5 Platform**
   - Pack ED\* Accepted (+ **ED5bis** auth RL env · **ED6bis** CSP report-only · **ED8bis** 0 Critical/High)
   - Threat model · Kernel checklist · IDOR tests · auth rate limit · security headers
   - CSP report-only + `/csp-report` · backup runbook + drill · pentest interne · `pnpm secrets:check`
