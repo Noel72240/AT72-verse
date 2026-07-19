@@ -28,7 +28,7 @@ export class HealthController {
       const organizations = await this.prisma.organization.count();
       const memberships = await this.prisma.membership.count();
       const packages = await this.prisma.package.count();
-      return { status: "ok", users, organizations, memberships, packages, build: "751b87f-gpt55" };
+      return { status: "ok", users, organizations, memberships, packages, build: "94910a8-nano" };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { status: "error", message };

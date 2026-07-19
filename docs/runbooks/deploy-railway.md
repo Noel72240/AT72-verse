@@ -35,10 +35,10 @@ Paste from your secrets file (values only on Railway):
 | `WEB_ORIGIN` | `https://at-72-verse-web.vercel.app` |
 | `PAYMENT_PROVIDER` | `sumup` |
 | `VERSE_PAYMENT_STUB` | `1` (until SumUp live keys) |
-| `VERSE_LLM_MODEL_FAST` | optional — default `gpt-5.4-mini` (chat / vitesse) |
-| `VERSE_LLM_MODEL_QUALITY` | optional — default `gpt-5.5` (posts / orchestration) |
+| `VERSE_LLM_MODEL_FAST` | optional — default `gpt-5.4-nano` (vitesse) |
+| `VERSE_LLM_MODEL_QUALITY` | optional — default `gpt-5.4-nano` (vitesse; put `gpt-5.5` for quality) |
 
-Optional: `VERSE_EMBED_AGENT_RUNTIME=0` only if you deploy a **separate** `apps/agent-runtime` service. By default the API embeds Adam so chat runs complete on a single Railway service.
+Optional: `VERSE_EMBED_AGENT_RUNTIME=0` only if you deploy a **separate** `apps/agent-runtime` service. By default the API embeds Adam so chat runs complete on a single Railway service. Embedded mode uses an **in-memory bus** (faster); set `VERSE_FORCE_REDIS=1` only if you need Redis Streams.
 
 Railway sets `PORT` automatically — the API already reads `PORT`.
 

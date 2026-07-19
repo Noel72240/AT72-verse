@@ -2,9 +2,9 @@
  * Core Model Router (Phase 13 / AT1 · AT3 · Phase 14 / BF1).
  * Maps profile → provider/model. Agents never see this table.
  *
- * Override via Railway env (optional):
- *   VERSE_LLM_MODEL_FAST=gpt-5.4-mini
- *   VERSE_LLM_MODEL_QUALITY=gpt-5.5
+ * Speed-first defaults (override on Railway if needed):
+ *   VERSE_LLM_MODEL_FAST=gpt-5.4-nano
+ *   VERSE_LLM_MODEL_QUALITY=gpt-5.4-nano
  */
 import type { RoutedModelProfileId } from "@at72-verse/contracts";
 import { isRoutedModelProfileId } from "@at72-verse/contracts";
@@ -22,8 +22,9 @@ function envModel(name: string, fallback: string): string {
 }
 
 function buildRoutes(): Record<RoutedModelProfileId, ModelRoute> {
-  const fast = envModel("VERSE_LLM_MODEL_FAST", "gpt-5.4-mini");
-  const quality = envModel("VERSE_LLM_MODEL_QUALITY", "gpt-5.5");
+  // Default everything to nano — lowest latency. Quality can be raised via env later.
+  const fast = envModel("VERSE_LLM_MODEL_FAST", "gpt-5.4-nano");
+  const quality = envModel("VERSE_LLM_MODEL_QUALITY", "gpt-5.4-nano");
   return {
     "fast-cheap": {
       profile: "fast-cheap",

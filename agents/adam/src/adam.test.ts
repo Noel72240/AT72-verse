@@ -158,4 +158,26 @@ describe("agent-adam Phase 15/24", () => {
     assert.equal(typeof out.result?.content, "string");
     assert.ok(String(out.result?.content).length > 0);
   });
+
+  it("handleTask writes simple social posts directly (no Nova hop)", async () => {
+    const kernel = createKernelClient({
+      context: {
+        run_id: "11111111-1111-4111-8111-111111111111",
+        agent_id: "adam",
+        organization_id: "22222222-2222-4222-8222-222222222222",
+        workspace_id: "33333333-3333-4333-8333-333333333333",
+        trace_id: "55555555-5555-4555-8555-555555555555",
+        step_id: "44444444-4444-4444-8444-444444444444",
+      },
+      backend: "stub",
+    });
+
+    const out = await handleTask({
+      kernel,
+      message: messageWithGoal("Prépare un post facebook pour Allotech72"),
+    });
+    assert.ok(out.plan.steps.some((s) => s.name === "direct_write"));
+    assert.ok(!out.plan.steps.some((s) => s.kind === "delegate"));
+    assert.equal(typeof out.result?.content, "string");
+  });
 });

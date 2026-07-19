@@ -52,7 +52,7 @@ export const WRITING_SKILL_SPEC: SkillSpec = {
       },
     },
   },
-  default_model_profile: "creative-balanced",
+  default_model_profile: "fast-cheap",
   persona_hints: { prefer_style: "structured" },
   tags: ["content", "copy"],
   eval_suite: "evals/writing-v0",
@@ -143,7 +143,7 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
   userParts.push(`Brief:\n${brief}`);
 
   const completion = await ctx.kernel.llm.complete({
-    profile: "creative-balanced",
+    profile: "fast-cheap",
     messages: [
       {
         role: "system",

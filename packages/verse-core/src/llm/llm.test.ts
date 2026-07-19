@@ -49,10 +49,10 @@ class FakeProvider implements LlmProviderAdapter {
 
 describe("Phase 13 LLM Core", () => {
   it("routes known Model Profiles including analytic-strict", () => {
-    assert.equal(resolveModelRoute("fast-cheap").model, "gpt-5.4-mini");
+    assert.equal(resolveModelRoute("fast-cheap").model, "gpt-5.4-nano");
     assert.equal(resolveModelRoute("orchestrate-precise").provider, "openai");
-    assert.equal(resolveModelRoute("creative-balanced").model, "gpt-5.5");
-    assert.equal(resolveModelRoute("analytic-strict").model, "gpt-5.5");
+    assert.equal(resolveModelRoute("creative-balanced").model, "gpt-5.4-nano");
+    assert.equal(resolveModelRoute("analytic-strict").model, "gpt-5.4-nano");
     assert.throws(
       () => resolveModelRoute("unknown-profile"),
       (err: unknown) => {
@@ -100,7 +100,7 @@ describe("Phase 13 LLM Core", () => {
     assert.equal(msg.payload.llm_call_id, result.llm_call_id);
     assert.equal(msg.payload.trace_id, fixedContext.trace_id);
     assert.equal(msg.payload.credential_source, "platform");
-    assert.equal(msg.payload.model, "gpt-5.4-mini");
+    assert.equal(msg.payload.model, "gpt-5.4-nano");
     assert.equal(typeof msg.payload.estimated_usd, "number");
     assert.ok(String(msg.payload.pricing_version).length > 0);
   });

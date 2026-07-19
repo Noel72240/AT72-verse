@@ -1,4 +1,4 @@
-import { createBusFromEnv, type Bus } from "@at72-verse/bus";
+import { createBus, createBusFromEnv, type Bus } from "@at72-verse/bus";
 import { createVerseCore, type VerseCore } from "@at72-verse/verse-core";
 
 function resolveKernelBackend(): "stub" | "core" {
@@ -12,10 +12,13 @@ export type PlatformRuntime = {
 
 /**
  * Shared Bus + Core wiring so API services publish via the same Bus instance (AG1).
- * Memory store is attached by MemoryModule (Prisma) on init — default in-memory until then.
+ * Embedded MVP uses in-memory bus (no Redis queue lag). Set VERSE_FORCE_REDIS=1 to keep Redis.
  */
 export function buildPlatformRuntime(): PlatformRuntime {
-  const bus = createBusFromEnv();
+  const embed = process.env.VERSE_EMBED_AGENT_RUNTIME !== "0";
+  const forceRedis = process.env.VERSE_FORCE_REDIS === "1";
+  const bus =
+    embed && !forceRedis ? createBus({ backend: "memory" }) : createBusFromEnv();
   const core = createVerseCore({
     bus,
     kernelBackend: resolveKernelBackend(),

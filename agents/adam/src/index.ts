@@ -69,6 +69,45 @@ function isDirectChatGoal(goal: string): boolean {
   return false;
 }
 
+function isSimpleWritingGoal(goal: string): boolean {
+  const g = goal.trim().toLowerCase();
+  if (/campagne|campaign|(article|contenu).*(seo|visuel|image)/.test(g)) {
+    return false;
+  }
+  return /facebook|linkedin|instagram|twitter|x\.com|post|poste|rédige|redige|write|annonce/.test(
+    g,
+  );
+}
+
+async function directWriteReply(
+  ctx: AdamHandleTaskContext,
+  goal: string,
+  resolved: ResolvedPersona,
+): Promise<AdamHandleTaskResult> {
+  const plan: AgentPlan = {
+    version: "1",
+    steps: [{ name: "direct_write", kind: "act", agent_id: ADAM_AGENT_ID }],
+  };
+  const reply = await ctx.kernel.llm.complete({
+    profile: "fast-cheap",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Tu es un copywriter social media. Écris uniquement le contenu demandé, prêt à publier (emojis/hashtags OK). Pas d'intro du type « Voici un post ». Sois concis.",
+      },
+      { role: "user", content: goal },
+    ],
+  });
+  return {
+    plan,
+    result: {
+      content: reply.content?.trim() || "Je n'ai pas pu rédiger le post — réessaie.",
+    },
+    resolved_persona: resolved,
+  };
+}
+
 async function directChatReply(
   ctx: AdamHandleTaskContext,
   goal: string,
@@ -262,6 +301,11 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
   // Chat / greetings must never fan-out to a campaign (LLM planner is over-eager).
   if (isDirectChatGoal(goal)) {
     return directChatReply(ctx, goal, resolved);
+  }
+
+  // Simple social/post asks: one fast LLM call (skip Nova + skill hop).
+  if (isSimpleWritingGoal(goal)) {
+    return directWriteReply(ctx, goal, resolved);
   }
 
   // Skip planner LLM when the goal clearly maps to a specialist (faster posts / SEO / etc.).
