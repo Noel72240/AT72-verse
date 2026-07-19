@@ -36,6 +36,8 @@ Paste from your secrets file (values only on Railway):
 | `PAYMENT_PROVIDER` | `sumup` |
 | `VERSE_PAYMENT_STUB` | `1` (until SumUp live keys) |
 
+Optional: `VERSE_EMBED_AGENT_RUNTIME=0` only if you deploy a **separate** `apps/agent-runtime` service. By default the API embeds Adam so chat runs complete on a single Railway service.
+
 Railway sets `PORT` automatically — the API already reads `PORT`.
 
 ## After first deploy

@@ -477,6 +477,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@at72-verse/agent-runtime':
+        specifier: workspace:*
+        version: link:../agent-runtime
       '@at72-verse/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -517,9 +520,6 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
     devDependencies:
-      '@at72-verse/agent-runtime':
-        specifier: workspace:*
-        version: link:../agent-runtime
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-tsconfig

@@ -16,6 +16,7 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@at72-verse/agent-runtime": "workspace:*",
     "@at72-verse/auth": "workspace:*",
     "@at72-verse/bus": "workspace:*",
     "@at72-verse/contracts": "workspace:*",
@@ -31,7 +32,6 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@at72-verse/agent-runtime": "workspace:*",
     "@at72-verse/config-tsconfig": "workspace:*",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.7",

@@ -42,7 +42,7 @@ export class RunsProjectorService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(BUS) private readonly bus: Bus,
-    private readonly runs: RunsService,
+    @Inject(RunsService) private readonly runs: RunsService,
   ) {}
 
   async onModuleInit(): Promise<void> {

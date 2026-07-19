@@ -6,6 +6,7 @@ import type { VerseCore } from "@at72-verse/verse-core";
 import { AuthController } from "./auth/auth.controller.js";
 import { AuthGuard } from "./auth/auth.guard.js";
 import { AUTH_PROVIDER, PRISMA } from "./auth/auth.tokens.js";
+import { AgentRuntimeHost } from "./core/agent-runtime.host.js";
 import { buildPlatformRuntime } from "./core/build-verse-core.js";
 import { BUS } from "./core/bus.tokens.js";
 import { VERSE_CORE } from "./core/core.tokens.js";
@@ -81,6 +82,7 @@ const platform = buildPlatformRuntime();
       useValue: platform.core as VerseCore,
     },
     AuthGuard,
+    AgentRuntimeHost,
   ],
   exports: [AUTH_PROVIDER, PRISMA, BUS, VERSE_CORE, AuthGuard, TenancyModule],
 })
