@@ -21,7 +21,7 @@ const KINDS = new Set<CapabilityKind>(["agent", "skill", "tool"]);
 export class GrantsService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly rbac: RbacService,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   async list(workspaceId: string, userId: string): Promise<{ grants: PermissionGrant[] }> {

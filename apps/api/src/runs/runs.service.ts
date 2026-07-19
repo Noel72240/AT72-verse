@@ -91,11 +91,11 @@ export class RunsService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(BUS) private readonly bus: Bus,
-    private readonly rbac: RbacService,
-    private readonly personas: PersonaService,
-    private readonly grants: GrantsService,
-    private readonly packages: PackagesService,
-    private readonly quotas: QuotasService,
+    @Inject(RbacService) private readonly rbac: RbacService,
+    @Inject(PersonaService) private readonly personas: PersonaService,
+    @Inject(GrantsService) private readonly grants: GrantsService,
+    @Inject(PackagesService) private readonly packages: PackagesService,
+    @Inject(QuotasService) private readonly quotas: QuotasService,
   ) {}
 
   async createConversation(input: CreateConversationInput) {

@@ -15,7 +15,7 @@ export class ToolsService implements OnModuleInit {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(VERSE_CORE) private readonly core: VerseCore,
-    private readonly rbac: RbacService,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   onModuleInit(): void {

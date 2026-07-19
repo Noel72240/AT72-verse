@@ -55,8 +55,8 @@ function quotaExceededException(input: {
 export class QuotasService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly rbac: RbacService,
-    private readonly billing: BillingService,
+    @Inject(RbacService) private readonly rbac: RbacService,
+    @Inject(BillingService) private readonly billing: BillingService,
   ) {}
 
   async getStatus(organizationId: string, userId: string): Promise<{

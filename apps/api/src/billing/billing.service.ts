@@ -56,7 +56,7 @@ export class BillingService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(PAYMENT_PROVIDER) private readonly payments: PaymentProvider,
-    private readonly rbac: RbacService,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   async getStatus(organizationId: string, userId: string): Promise<OrgBillingPublic> {

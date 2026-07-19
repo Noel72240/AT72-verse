@@ -14,7 +14,7 @@ export type CreateWorkspaceInput = {
 export class WorkspacesService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly rbac: RbacService,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   async create(input: CreateWorkspaceInput) {

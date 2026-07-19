@@ -37,7 +37,7 @@ export function goneSoftDeleted(resource: string): never {
 export class PrivacyService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly rbac: RbacService,
+    @Inject(RbacService) private readonly rbac: RbacService,
   ) {}
 
   /** Load org by id; 410 if soft-deleted, 404 if missing. */

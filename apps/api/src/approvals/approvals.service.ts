@@ -34,8 +34,8 @@ export class ApprovalsService implements OnModuleInit {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(VERSE_CORE) private readonly core: VerseCore,
     @Inject(BUS) private readonly bus: Bus,
-    private readonly rbac: RbacService,
-    private readonly grants: GrantsService,
+    @Inject(RbacService) private readonly rbac: RbacService,
+    @Inject(GrantsService) private readonly grants: GrantsService,
   ) {}
 
   onModuleInit(): void {

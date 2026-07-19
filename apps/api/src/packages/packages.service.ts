@@ -23,8 +23,8 @@ import { RbacService } from "../rbac/rbac.service.js";
 export class PackagesService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly rbac: RbacService,
-    private readonly quotas: QuotasService,
+    @Inject(RbacService) private readonly rbac: RbacService,
+    @Inject(QuotasService) private readonly quotas: QuotasService,
   ) {}
 
   async listCatalogPublic() {

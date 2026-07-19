@@ -77,8 +77,8 @@ export class WorkflowsService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(BUS) private readonly bus: Bus,
-    private readonly rbac: RbacService,
-    private readonly packages: PackagesService,
+    @Inject(RbacService) private readonly rbac: RbacService,
+    @Inject(PackagesService) private readonly packages: PackagesService,
   ) {}
 
   listDefinitions(): { workflows: WorkflowDefinition[] } {
