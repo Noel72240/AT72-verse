@@ -20,12 +20,6 @@ export class OpenAiProviderAdapter implements LlmProviderAdapter {
         model: input.model,
         messages: input.messages,
         max_tokens: input.max_tokens,
-        metadata: {
-          run_id: input.context.run_id,
-          trace_id: input.context.trace_id,
-          llm_call_id: input.llm_call_id,
-          agent_id: input.context.agent_id,
-        },
       });
 
       const content = response.choices[0]?.message?.content ?? "";
