@@ -503,6 +503,12 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Quotas API tiers · security token leakage · UX OAuth |
 | **Critères de validation** | Publication réelle sur compte test · revoke coupe l’accès · secrets absents des logs |
 | **Complexité** | **XL** |
+| **Statut** | **DX\* + ADR-013 Accepted (2026-07-19)** — **28a en cours** · 28b bloquée · P29 non démarrée |
+
+> **Sous-phases :**  
+> **28a** SecretsVaultPort + OAuth LinkedIn + API/UI connexions (**0** publish live) · **28b** `social-publish` live LinkedIn (dual-mode DX5)  
+> Stop PO obligatoire entre 28a et 28b · OAuth confiné **API ↔ Core** uniquement.
+
 
 ---
 

@@ -90,6 +90,10 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 27c pack DW1–DW9 **soumis PO** (`docs/phase-27c-decisions.md`) — Neo+Kira+Nyx · crm-sync/video-pipeline dry-run · storyboard · **J17 après validation livraison** · **pas d’implémentation** · pas de P28 auto | Proposed | 2026-07-19 |
 | — | Phase 27c DW1–DW9 Accepted (+ dry-run crm/video · Kira sans tool · golden Kira→Neo consult · video-brief/video-pipeline · J17 post-livraison) · 27c en cours | **Accepted** | 2026-07-19 |
 | — | Phase **27c validée** (Neo+Kira+Nyx) ; Catalogue agents v1 ; dry-run déterministe · Registry unique · pas de logique métier Runtime/Core/Host · **Jalon J17 atteint** · P28 pack à valider avant code | Accepted | 2026-07-19 |
+| — | Phase 28 pack DX1–DX13 **soumis PO** (`docs/phase-28-decisions.md`) — orientations PO DX2/3/4/5/8 (+ contraintes vault/dry-run) · **validation finale en attente** · **pas de commit docs** · **pas d’implémentation** · ADR-013 après Accept · pas de P29 auto | Proposed | 2026-07-19 |
+| — | Phase 28 DX1–DX13 **Accepted** (+ amendement **DX13-B** : sous-phases **28a** vault/OAuth/API-UI → **28b** social-publish live LinkedIn) · contraintes plaintext éphémère · dry-run défaut · **ADR-013 Proposed** · **pas d’implémentation** tant que ADR non validé · pas de P29 auto | **Accepted** | 2026-07-19 |
+| — | Phase 28 + **ADR-013 Accepted** (+ OAuth confiné API↔Core · aucune donnée OAuth Agents/Skills/Runtime/Host) · **28a en cours** · 28b bloquée · pas de P29 auto | **Accepted** | 2026-07-19 |
+| [ADR-013](./ADR/013-tenant-secrets-vault-oauth-connectors.md) | Tenant Secrets Vault + OAuth Connectors (LinkedIn · dual-mode · 28a/28b · OAuth API↔Core only) | **Accepted** | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |
 | ADR-009 | Polyglot Python runtime | Proposed | — |

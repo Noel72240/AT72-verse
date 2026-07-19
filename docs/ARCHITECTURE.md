@@ -1758,6 +1758,7 @@ Messages/runs · Tokens · Storage · Agents actifs · Skills · Tool side-effec
 | ADR-010 | Stockage personas                             | Fichiers versionnés + DB / DB only |
 | ADR-011 | Skills : code vs déclaratif                   | **Accepted — hybride** · `docs/ADR/011-skills-hybrid.md` |
 | ADR-012 | Signature packages                            | Cosign / Sigstore / custom |
+| ADR-013 | Tenant Secrets Vault + OAuth Connectors       | **Accepted** — port vault + LinkedIn + dual-mode · 28a/28b · OAuth API↔Core only · `docs/ADR/013-…` |
 
 Chaque ADR : `docs/ADR/XXXX-titre.md`.
 
