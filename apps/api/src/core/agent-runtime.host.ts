@@ -40,10 +40,10 @@ export class AgentRuntimeHost implements OnModuleInit, OnModuleDestroy {
       bus: this.bus,
       core: this.core,
       prisma: this.prisma,
-      consumerGroup: process.env.VERSE_AGENT_CONSUMER_GROUP ?? "api-embedded-runtime",
+      consumerGroup: process.env.VERSE_AGENT_CONSUMER_GROUP ?? "api-embedded-runtime-v3",
     });
     this.logger.log(
-      `Embedded agent-runtime ready; agents: ${this.handle.agents.join(", ")}`,
+      `Embedded agent-runtime ready; agents: ${this.handle.agents.join(", ")}; group: ${process.env.VERSE_AGENT_CONSUMER_GROUP ?? "api-embedded-runtime-v3"}`,
     );
   }
 

@@ -129,12 +129,13 @@ export class RedisStreamsBus implements Bus {
   ): Promise<void> {
     while (!state.stop && !this.closed) {
       try {
+        // One message at a time — a hung LLM call must not block a whole batch.
         const result = (await this.redis.xreadgroup(
           "GROUP",
           group,
           consumer,
           "COUNT",
-          10,
+          1,
           "BLOCK",
           this.pollIntervalMs,
           "STREAMS",
@@ -142,35 +143,15 @@ export class RedisStreamsBus implements Bus {
           ">",
         )) as [string, [string, string[]][]][] | null;
 
-        if (!result) continue;
+        if (!result) {
+          // Reclaim messages abandoned by crashed consumers (deploys / OOM).
+          await this.reclaimPending(topic, group, consumer, handler);
+          continue;
+        }
 
         for (const [, entries] of result) {
           for (const [id, fields] of entries) {
-            const raw = fieldValue(fields, "payload");
-            if (!raw) {
-              await this.redis.xack(topic, group, id);
-              continue;
-            }
-            const message = parseBusMessage(raw);
-            const frozen = prepareMessageForPublish(message);
-            const claimKey = `${group}:${frozen.event_id}`;
-            const claimed = await this.idempotency.tryClaim(claimKey);
-            if (!claimed) {
-              await this.redis.xack(topic, group, id);
-              continue;
-            }
-            try {
-              await handler(frozen as BusMessage);
-              await this.redis.xack(topic, group, id);
-            } catch (err) {
-              if (this.sendToDlqOnHandlerError && topic !== TOPIC_DLQ) {
-                const reason = err instanceof Error ? err.message : String(err);
-                await publishToDlq(this, frozen as BusMessage, reason);
-                await this.redis.xack(topic, group, id);
-              } else {
-                throw err;
-              }
-            }
+            await this.dispatchEntry(topic, group, id, fields, handler);
           }
         }
       } catch (err) {
@@ -180,6 +161,66 @@ export class RedisStreamsBus implements Bus {
         if (err instanceof BusError && err.code === "INVALID_MESSAGE") {
           continue;
         }
+      }
+    }
+  }
+
+  private async reclaimPending(
+    topic: string,
+    group: string,
+    consumer: string,
+    handler: BusHandler,
+  ): Promise<void> {
+    try {
+      // XAUTOCLAIM returns [nextStartId, [[id, fields], ...], ...] depending on Redis version.
+      const claimed = (await this.redis.xautoclaim(
+        topic,
+        group,
+        consumer,
+        60_000,
+        "0-0",
+        "COUNT",
+        5,
+      )) as [string, [string, string[]][], string[]?];
+      const entries = claimed?.[1] ?? [];
+      for (const [id, fields] of entries) {
+        await this.dispatchEntry(topic, group, id, fields, handler);
+      }
+    } catch {
+      // Older Redis / Upstash quirks — ignore reclaim failures.
+    }
+  }
+
+  private async dispatchEntry(
+    topic: string,
+    group: string,
+    id: string,
+    fields: string[],
+    handler: BusHandler,
+  ): Promise<void> {
+    const raw = fieldValue(fields, "payload");
+    if (!raw) {
+      await this.redis.xack(topic, group, id);
+      return;
+    }
+    const message = parseBusMessage(raw);
+    const frozen = prepareMessageForPublish(message);
+    const claimKey = `${group}:${frozen.event_id}`;
+    const claimed = await this.idempotency.tryClaim(claimKey);
+    if (!claimed) {
+      await this.redis.xack(topic, group, id);
+      return;
+    }
+    try {
+      await handler(frozen as BusMessage);
+      await this.redis.xack(topic, group, id);
+    } catch (err) {
+      if (this.sendToDlqOnHandlerError && topic !== TOPIC_DLQ) {
+        const reason = err instanceof Error ? err.message : String(err);
+        await publishToDlq(this, frozen as BusMessage, reason);
+        await this.redis.xack(topic, group, id);
+      } else {
+        throw err;
       }
     }
   }
