@@ -10,10 +10,10 @@ import { execute, SKILL_ID, WRITING_SKILL_SPEC } from "../index.js";
 const GOLDEN_BRIEF = "Write a short LinkedIn post announcing AT72 Verse Phase 14 skills.";
 
 describe("skill.writing golden (BI1)", () => {
-  it("exports marketplace SkillSpec with fast-cheap profile", () => {
+  it("exports marketplace SkillSpec with creative-balanced profile", () => {
     assert.equal(SKILL_ID, "skill.writing");
     assert.equal(WRITING_SKILL_SPEC.version, "0.1.1");
-    assert.equal(WRITING_SKILL_SPEC.default_model_profile, "fast-cheap");
+    assert.equal(WRITING_SKILL_SPEC.default_model_profile, "creative-balanced");
   });
 
   it("execute returns schema-valid content via Kernel.llm.complete", async () => {
