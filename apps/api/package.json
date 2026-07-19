@@ -1,0 +1,42 @@
+{
+  "name": "@at72-verse/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NestJS API gateway",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@at72-verse/auth": "workspace:*",
+    "@at72-verse/bus": "workspace:*",
+    "@at72-verse/contracts": "workspace:*",
+    "@at72-verse/db": "workspace:*",
+    "@at72-verse/verse-core": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@at72-verse/agent-runtime": "workspace:*",
+    "@at72-verse/config-tsconfig": "workspace:*",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "@types/supertest": "^6.0.2",
+    "eslint": "^9.18.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

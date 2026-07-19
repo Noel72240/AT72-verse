@@ -1,0 +1,228 @@
+﻿# Changelog
+
+All notable changes to AT72 Verse will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+
+- **Phase 26 — Premier workflow déclaratif** — **validée PO (2026-07-19)** — **Jalon J16 atteint**
+  - DT1–DT12 Accepted (+ amendement DT6 : checkpoints · resume manuel · `paused`/`waiting_checkpoint` · **pas** de retry auto · Engine sans logique métier · handlers extensibles) · `docs/workflows.md`
+  - Contracts `0.1.16` : `WorkflowDefinition` / `WorkflowStepSpec` · statuses `waiting_checkpoint`/`paused` · seed `pkg.workflow.content-campaign`
+  - Core : `WorkflowEngine` + `registerHandler` · kinds `memory_remember` · `fan_out` · `delegate` · `checkpoint` · `noop`
+  - Définition `content-campaign` : ingest → fan-out Nova|Astra|Pixel → checkpoint → finalize
+  - Prisma `workflow_definitions` / `workflow_runs` · Runtime bus `verse.workflow.tasks` · Host allow-list workflow
+  - API `GET /workflows` · `POST .../run` · `GET /workflow-runs/:id` · `POST .../resume` · gate Package Registry
+  - Web `/workflows` lancer / poll / resume
+  - Tests : engine pause/resume · unknown kind · registerHandler · runtime golden content-campaign
+  - Post-J16 : Engine = orchestrateur only · Skills/Agents indépendants du moteur · Agents = intelligence métier · futurs nœuds via handlers sans rupture d’archi
+- **Phase 25 — Memory L4 (org brand) + embeddings** — **validée PO (2026-07-19)** — **Jalon J15 atteint**
+  - DS1–DS12 + ADR-007 Option A Accepted · contraintes score déterministe · résultats explicables · kill-switch sémantique · vector via Kernel.memory only
+  - Contracts `0.1.15` : layer `L4` · `MemoryRecallExplanation` · `pinned` / `deleted_at` · Rate Card `2026-07-19.v2`
+  - Gateway : scopes `org.brand` / `org.content` · `pin` / `forget` · `VectorIndexPort` (in-memory + pgvector) · `VERSE_SEMANTIC_MEMORY=0`
+  - Docker `pgvector/pgvector:pg16` · table `memory_embeddings` · cascade org delete
+  - `Kernel.llm.embed` + metering Cost Engine · API/UI Memory Explorer CRUD admin
+  - Nova lit `org.brand` (tone of voice) · tests : semantic/explainable · kill-switch · isolation tenant · pin/forget · golden Nova
+  - Post-J15 : pas d’accès métier à pgvector · sémantique = Kernel.memory only · swap moteur sans Agents/Skills · embeddings dérivés · kill-switch textuel
+- **Phase 24 — Fan-out / Fan-in & Ask/Consult** — **validée PO (2026-07-19)** — **Jalon J14 atteint**
+  - DR1–DR10 Accepted (+ amendement DR8 mutex Cost Engine interne) · `docs/orchestration.md`
+  - Contracts `0.1.14` : `delegateMany` · `OrchestrationAskResult` · `task.consulted` · `orchestration_locked`
+  - Kernel / Host : `delegateMany` (ordre = targets) · `ask` (pas de depth++, lock nested orch) · gates `can_consult`+package+grant
+  - Cost Engine : `runExclusive(run_id)` interne — API `Kernel.cost.*` inchangée
+  - Adam campagne Nova+Astra+Pixel · fan-in `{ nova, astra, pixel }` sans polish · all-or-nothing
+  - Nova → Astra via `ask` (opt-in `consult_seo`) · API projector `kind: consult` · timeline siblings
+  - Tests : campaign golden · all-or-nothing · ask allow/deny/lock · Cost mutex · timeline parallel
+  - Post-J14 : `delegateMany` = fan-out unique · `ask` ≠ orch cachée · workflows sur ces primitives · Host générique · snapshots = reproductibilité
+- **Phase 23 — Agents Orion + Astra + Pixel** — **validée PO (2026-07-19)** — **Jalon J13 atteint**
+  - DQ1–DQ11 Accepted · contraintes extensibilité Runtime-only (pas de modif Core pour un 5ᵉ specialist)
+  - Agents Orion/Astra/Pixel + skills `analysis` / `seo` / `image-generation` + tools stubs `seo-audit` / `image-generate`
+  - Contracts `0.1.13` : profile `analytic-strict` · seeds packages/grants élargis
+  - Adam allow-list multi-specialists (depth 1) · OrchestrationHost dérive allow-list du **Runtime agent registry**
+  - Personas + Package Registry + Grants seeds · API projector · timeline existante
+  - Tests : 3 golden Runtime + skill goldens + grant/uninstall Orion
+  - Post-J13 : nouveau specialist sans modifier OrchestrationHost · modèle Package+Persona+Skill+Grants · providers image remplacent le stub seulement · Cost Engine mesure les LLM · snapshots figés au Run
+- **Phase 22 — Package Registry first-party** — **validée PO (2026-07-19)** — **Jalon J12 atteint**
+  - DP1–DP14 Accepted (+ DP12b) · `docs/package-registry.md` · `docs/packages-matrix.md`
+  - Contracts `0.1.12` : `PackagesSnapshot` · `TenantPackageRecord` · seeds first-party · `packages_snapshot` KernelContext/AgentTaskPayload
+  - Prisma `packages` / `package_versions` / `tenant_packages` · soft uninstall (DP14)
+  - Core : install gate (≠ Permissions) · `Kernel.registry.get*` métadonnées catalogue
+  - API catalog + org install/uninstall/pin · stamp snapshot au dispatch
+  - Runtime / OrchestrationHost : refuse packages non installés avant `handleTask` (DP9)
+  - Web `/packages` install/uninstall/pin · nav Chat/Persona/Memory/Grants
+  - Tests : uninstall Nova · Adam→Nova fail clean · gate unitaires
+  - Post-J12 : Marketplace réutilise ce Registry · chargeur dynamique sans changer Kernel.registry · signatures/tiers enrichissent le modèle · packages_snapshot = reproductibilité/rejeu
+- **Phase 21 — Cost Engine basique** — **validée PO (2026-07-19)** — **Jalon J11 atteint**
+  - DO1–DO13 Accepted (DO3a) · `docs/cost-engine.md` · `docs/cost-matrix.md`
+  - Contracts `0.1.11` : `BudgetSnapshot` · `RunCostSummary` · `estimated_usd`/`pricing_version` sur usage · `budget_snapshot` KernelContext
+  - Core : `CostEngine` · Rate Card versionnée · hard-stop `BUDGET_EXCEEDED` sur `llm.complete` · `Kernel.cost.*` branchés (API publique inchangée)
+  - Prisma : colonnes `llm_usages.estimated_usd` / `pricing_version` · defaults budget workspace
+  - API : stamp `budget_snapshot` au dispatch · `GET /runs/:id/cost` agrège `llm_usages` (DO3a)
+  - Web timeline : coût / tokens / plafond
+  - Tests : déterminisme Rate Card · hard-stop · ledger partagé Adam/Nova
+  - Post-J11 : Tools/connectors → Cost Engine sans changer Kernel.cost · billing s’appuie sur le moteur · Rate Card versionnée · agrégats dérivés de llm_usages tant que perf OK
+- **Phase 20 — Permissions agents / skills / tools** — **validée PO (2026-07-19)** — **Jalon J10 atteint**
+  - DN1–DN13 Accepted · contraintes reasons / extensibilité / déterminisme · `docs/permission-engine.md` · `docs/permissions-matrix.md`
+  - Contracts `0.1.10` : `PermissionGrant` · `CapabilityGrantSnapshot` · `AuthzDecision` · `grants_snapshot` KernelContext/AgentTaskPayload · seeds DN12
+  - Core : `PermissionEngine` (Persona ∩ allowlist ∩ grant ∩ side-effect) · point unique d’application
+  - Prisma `capability_grants` · seeds first-party à la création org/workspace
+  - API GET/PUT grants · stamp snapshot au dispatch · Runtime refuse agents désactivés avant `handleTask`
+  - Web `/grants` enable/disable · nav Chat/Persona/Memory
+  - Tests : matrice ≥10 cas allow/deny + audit reasons
+  - Post-J10 : toute capacité → Permission Engine only · politiques futures sans changer Kernel APIs · grants_snapshot = audit/rejeu · décisions déterministes/explicables/auditables
+- **Phase 19 — Tool Runtime + 2 tools** — **validée PO (2026-07-19)** — **Jalon J9 atteint**
+  - DM1–DM13 Accepted (+ DM11 tool explicite) · `docs/tool-runtime.md`
+  - Contracts `0.1.9` : `ToolModule`/`ToolPlugin` · `execution_id` sur `ToolExecuteResult` · `tools_allowlist` KernelContext
+  - Core : `ToolRuntime` · `ToolHostPort` · allowlist Persona∩Agent · Ajv · timeout · audit
+  - Tools `web-search` (WebSearchPort) · `file-read-write` (sandbox) · Runtime registry
+  - `skill.writing` : `use_web_search` opt-in only · API GET tool-executions
+  - Tests : allow/deny + audit · citation web · sandbox traversal
+  - Post-J9 : Tools via ToolHostPort+registry ; Kernel.tools only ; Grants P20 enrichissent sans changer execute ; connecteurs = ToolSpec+execute
+- **Phase 18 — Memory L1 + L2** — **validée PO (2026-07-19)** — **Jalon J8 atteint**
+  - DL1–DL13 Accepted (+ DL8 summarizer abstrait) · `docs/memory-gateway.md`
+  - Contracts `0.1.8` : `MemoryRecord` enrichi · `conversation_id` sur KernelContext
+  - Core : `MemoryGateway` · `MemoryStorePort` · `DeterministicConversationSummarizer` · scopes Persona
+  - Prisma `memory_records` · store API/Runtime · Adam remember / Nova recall `run.working`
+  - API GET memory read-only · Web `/memory` · forget/pin/link = UNAVAILABLE
+  - Tests : isolation org/user · brief Adam→Nova via mémoire · summarize déterministe
+  - Post-J8 : Kernel.memory only · vectoriel derrière Gateway · pas d’accès direct au store · L3–L5 sans rupture
+- **Phase 17 — Persona Engine (MVP)** — **validée PO (2026-07-19)** — **Jalon J7 atteint**
+  - ADR-010 Accepted (hybride) · DA1–DK1 Accepted · `docs/persona-engine.md`
+  - Core : `PersonaEngine` · `mergePersonaLayers` · seeds adam/nova · `Kernel.persona.resolve`
+  - Prisma `persona_overrides` · API CRUD/preview · stamp overrides on agent task dispatch
+  - Runtime ALS stamps · Nova/Adam resolve · `skill.writing` formality/rules · RunStep `resolved_persona`
+  - Web `/persona` editor (formality + rules + preview JSON)
+  - Tests : merge déterministe · intégration formality→writing content
+  - Post-J7 : futures couches merge sans casser le moteur ; agents → `Kernel.persona.resolve` only ; comportement configurable → Persona Engine ; Personas ≠ Skills
+- **Phase 16 — UI Chat + streaming + timeline** — **validée (2026-07-19)** ; **Jalon J6 atteint**
+  - `apps/web` Next.js 15 App Router · DevAuth · org/workspace selector · chat-first UX
+  - API : list conversations/messages · CORS · `GET /runs/:id/stream` (SSE métier) · assistant message + run `completed` on root success
+  - Timeline DAG RunSteps · agent actif dérivé des steps · reconnect REST+SSE
+  - Playwright smoke · `docs/demo-phase16.md` · `docs/chat-ui.md`
+  - Contraintes post-J6 : Front → API only · Conversation/Message/Run only · pas de faux token stream · SSE métier stable · timeline = projection RunSteps · token stream = phase dédiée
+- **Phase 15 — Délégation Adam → Nova** — **validée (2026-07-19)** ; **Jalon J5 atteint**
+  - Adam planifie via `Kernel.llm.complete` (`orchestrate-precise`) · `orchestration.delegate` await
+  - `OrchestrationHostPort` (Runtime) · dispatch Nova in-process · API remote-ready
+  - DAG `parent_step_id` · `task.delegated` avant exécution · fail cascade Nova→Adam→Run
+  - Allow-list `adam→nova` · profondeur max 1 · pass-through · contracts `0.1.6`
+  - Tests : runtime orch · e2e happy path + échec Nova → Run failed · `docs/orchestration.md`
+  - Contraintes post-J5 : pas de com. directe agents · délégation = OrchestrationHost only · même contrat pour futurs agents · Host distribué = même API Kernel
+- **Phase 14 — Skill `writing` + agent Nova** — **validée (2026-07-18)** ; **Jalon J4 atteint**
+  - ADR-011 Accepted (hybride) · `docs/ADR/011-skills-hybrid.md` · `docs/skills.md`
+  - `skills/writing` : SkillSpec + `execute` · profile `creative-balanced` · Ajv I/O · golden eval
+  - `agents/nova` : `handleTask` (modèle Adam) · binding explicite `skill.writing`
+  - Runtime : skill registry + `SkillHostPort` · Core `Kernel.skills.invoke` sans charger skills
+  - Profile `creative-balanced` routé Core · projector Runs inclut `nova` · contracts `0.1.5`
+  - Contraintes post-J4 : agents orchestrent Skills (jamais de réimplémentation) · Skills ignorent l’agent appelant · capacité métier = Skill d’abord · Marketplace sans modif Core · SkillSpec versionnable
+- **Phase 13 — Provider LLM réel + Model Profiles** — **validée (2026-07-18)** ; **Jalon J3 atteint**
+  - Core : `ManagedLlmAdapter` + `OpenAiProviderAdapter` (SDK confiné) · Model Router · Credential Resolver platform
+  - `Kernel.llm.complete` réel · `stream` / `embed` → `UNAVAILABLE` · erreurs `AUTH` / `RATE_LIMIT` / `TIMEOUT` / `PROVIDER_ERROR`
+  - Bus `verse.llm.usage` → API `LlmUsageProjectorService` → table `llm_usages`
+  - Contracts `0.1.4` : `ROUTED_MODEL_PROFILE_IDS`, `LlmUsageRecordedPayload`, `llm_call_id` sur completions
+  - Runtime host Core (AR1) · harness LLM hors Adam (AX1) · doc `docs/llm-provider.md`
+  - Contraintes post-J3 : Kernel→Core→Adapter only · providers = adapters · Model Profiles only · usage Bus = métrologie
+- **Phase 12 — Agent Runtime + Adam (sans LLM)** — **validée (2026-07-18)** ; **Jalon J2 atteint**
+  - `agents/adam` : `handleTask` déterministe + manifeste `kind: orchestrator`
+  - `apps/agent-runtime` : registry multi-agents · Kernel stub · subscribe tasks · publish `task.completed`
+  - API : `target_agent` dispatch `verse.agent.adam.tasks` · `RunsProjectorService` matérialise RunSteps
+  - Contracts `0.1.3` : `AgentTaskPayload` / `AgentPlan` / `AgentTaskCompletedPayload`
+  - Doc `docs/agent-runtime.md` · `pnpm runtime:start`
+  - Contraintes post-J2 : Runtime = unique moteur d’exécution ; projections API only ; agents via Kernel+Bus
+- **Phase 11 — Runs & RunSteps**
+  - Prisma : `conversations`, `messages`, `runs`, `run_steps` (migration `20260718150000_runs_v0`)
+  - Contracts `@at72-verse/contracts@0.1.2` : `Run`, `RunStep`, enums, `canTransitionRunStatus`
+  - API : create/get conversation/message/run/steps · `PATCH /runs/:id/status` (technique AF2)
+  - Bus `verse.runs.created|status_changed|step_created` via `@at72-verse/bus` (même `run_id`)
+  - Doc `docs/runs.md` · tests isolation tenant
+- **Phase 10 — Bus d’événements minimal (ADR-003)**
+  - `@at72-verse/bus` : `InMemoryBus` + `RedisStreamsBus` ; factory `createBus` / `createBusFromEnv`
+  - Publish + Subscribe réels ; `request` / `broadcast` → `BusError` `UNAVAILABLE` (T2)
+  - Topics publics `verse.runs.*`, `verse.agent.{id}.tasks` + réservés system/audit/metrics ; DLQ `verse.dlq` (W1)
+  - Idempotence consommateur sur `event_id` ; messages gelés à la publish ; `version` obligatoire
+  - Câblage Core `createVerseCore({ bus })` via `createBusPortAdapter` (Z1)
+  - Doc `docs/bus-topics.md` ; CI service Redis + tests intégration si `REDIS_URL`
+- **Phase 09 — Boundary enforcement (CI)**
+  - ESLint allow-list P2 pour `agents/**` / `skills/**` (`contracts` + `verse-kernel` only)
+  - ESLint O3 : `apps/api` → façade `@at72-verse/verse-core` only ; `verse-core` sans agents
+  - `dependency-cruiser` (`.dependency-cruiser.mjs`) complémentaire au graphe de deps
+  - Fixture Q1 isolée + `pnpm boundaries:prove` ; `pnpm boundaries` dans CI
+  - Doc `docs/boundaries.md` (exemples, limite imports dynamiques R1)
+- **Phase 08 — Verse Core squelette & adapters no-op**
+  - `@at72-verse/verse-core` : façade `createVerseCore` / `VerseCore` (ADR-001) — orchestrateur de modules, pas de logique agent
+  - Ports adapters définitifs + implémentations no-op (LLM, memory, bus, database, object storage, vector)
+  - Manifeste modules §5.4 ; `health()` extensible (status, modules, adapters, backend, version, uptime)
+  - `CoreKernelClient` in-process pour démo câblage (`VERSE_KERNEL_BACKEND=core`)
+  - Kernel dual backend L2 : `stub` (défaut CI) vs `core` via `coreFactory` host — opaque pour agents
+  - API : injection façade uniquement ; `GET /health/core`
+- **Phase 07 — Verse Kernel stub**
+  - `@at72-verse/verse-kernel` : `createKernelClient`, `StubKernelClient` déterministe, `KernelError`, historique d’appels + instrumentation interne
+  - Réexport types depuis `@at72-verse/contracts` uniquement (G1)
+  - `KernelContext` additif (`trace_id`, `span_id`, `organization_id`, `user_id` + alias `tenant_id`) — contracts `0.1.1`
+  - Fake agent cycle LLM→remember→recall→emit ; doc `docs/agents/kernel-syscalls.md`
+- **Phase 06 — Organisations, membres, workspaces**
+  - Table `invitations` (token unique, expiry, statuts PENDING/ACCEPTED/EXPIRED/REVOKED, réémission avec historique)
+  - `RbacService` + `RbacGuard` + hiérarchie OWNER>ADMIN>EDITOR>VIEWER
+  - API : `POST/GET /organizations`, invitations, workspaces, `GET /workspaces/:id`
+  - Tests isolation User A/B + RBAC invitations (EDITOR refusé)
+- **Phase 05 — Authentification (ADR-004)**
+  - `@at72-verse/auth` : port `AuthProvider`, `DevAuthAdapter`, `ClerkAuthAdapter`, factory `AUTH_PROVIDER`
+  - NestJS bootstrap `apps/api` : `GET /health`, `GET /me`, `POST /auth/dev/login`, `POST /auth/logout`, `POST /webhooks/clerk` (stub)
+  - AuthGuard + lazy upsert idempotent `users` (`clerk_user_id`, email, displayName, avatarUrl)
+  - Migration additive `avatar_url` sur `users`
+  - Tests auth (dev session) + health API ; e2e login→/me→logout si `DATABASE_URL`
+- **Phase 04 — Schéma DB tenancy & Prisma**
+  - `@at72-verse/db` : Prisma 6 + PostgreSQL — `organizations`, `users`, `memberships`, `workspaces`, `workspace_members`
+  - Migration `20260718120000_tenancy_v0` ; seed minimal Acme ; helpers CRUD tenancy
+  - `organization_id` sur tables métier (`workspaces`, `memberships`, `workspace_members`)
+  - Rôles `OrgRole` / `WorkspaceRole` (OWNER|ADMIN|EDITOR|VIEWER) alignés Phase 06
+  - `users.clerk_user_id` nullable (ADR-004) ; RLS reportée
+  - Scripts `pnpm db:generate|migrate|seed|studio` ; CI avec service Postgres 16 + migrate + seed
+- **Phase 03 — Stack locale Docker**
+  - `infra/docker/docker-compose.yml` : PostgreSQL 16, Redis 7, MinIO (profile `minio`)
+  - Healthchecks Postgres/Redis/MinIO ; volumes persistants
+  - Scripts `pnpm docker:up|up:minio|ps|down|down:volumes|check` (`docker:check` → `scripts/check-docker-stack.mjs`)
+  - `.env.example` (DATABASE_URL, REDIS_URL, S3_*)
+  - Runbook `docs/runbooks/local-dev.md` + `infra/docker/README.md`
+- **Phase 02 — Contrats partagés (freeze v0)**
+  - `@at72-verse/contracts@0.1.0` : types TS + JSON Schemas + exemples
+  - Contrats : `BusMessage`/`MessageEnvelope`, `AgentManifest`, `PersonaSpec`, `SkillSpec`, `ToolSpec`, `PackageManifest`, `KernelClient` stubs, `Bus` API types
+  - Validation Ajv des exemples (`pnpm --filter @at72-verse/contracts validate:examples` / `test`)
+  - CI exécute désormais `pnpm test`
+- **Phase 01 — Bootstrap monorepo**
+  - pnpm workspaces + Turborepo (`turbo.json`)
+  - Shared TypeScript configs (`@at72-verse/config-tsconfig`, strict)
+  - Shared ESLint 9 flat config (`@at72-verse/config-eslint`)
+  - Prettier + root `eslint.config.mjs`
+  - Compilable workspace packages for apps, packages, agents, skills, tools
+  - Scripts: `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm ci`, `pnpm dev` (no-op)
+  - GitHub Actions CI (lint + typecheck + format check)
+  - `pnpm-lock.yaml`, `.npmrc`, Node 22 (`.nvmrc`)
+- Monorepo directory structure (pre-Phase 01)
+- Architecture V2 documentation
+- Development roadmap (40 phases to GA)
+
+### Decisions
+
+- **ADR-001 Accepted (Option C):** Verse Core embarqué dans le process API au MVP, derrière une façade publique stricte ; extraction service autonome reportée avec critères explicites. Voir `docs/ADR/001-verse-core-embedded-with-facade.md`.
+- **ADR-002 Accepted (Option A):** Verse Kernel en library (`packages/verse-kernel`) avec transports pluggables **entièrement opaques** pour agents/skills ; le Kernel choisit le transport. Voir `docs/ADR/002-verse-kernel-library-transparent-transport.md`.
+- **ADR-003 Accepted (Option A):** Event bus MVP = Redis Streams derrière API Bus générique (Publish / Subscribe / Request-Reply / Broadcast) ; enveloppe normalisée + événements versionnés ; migration NATS sans code métier. Voir `docs/ADR/003-event-bus-redis-streams-abstracted.md`.
+- **ADR-004 Accepted (Option B):** Clerk comme IdP uniquement ; Verse = source de vérité domaine ; `packages/auth` abstrait ; rôles auth ≠ RBAC métier. Voir `docs/ADR/004-auth-clerk-idp-abstraction.md`.
+- **ADR-005 Accepted (Option C):** Core BYOK-ready ; BYOK désactivé au MVP ; Credential Resolver hiérarchique (agent → org → workspace → platform → refuse) ; Cost Engine trace l’origine ; secrets en vault uniquement. Voir `docs/ADR/005-llm-byok-ready-credential-resolver.md`.
+- **ADR-006 Accepted (Option C):** Runtime agents Verse natif (Reason→Plan→Act→Observe→Reflect) ; Workflow Engine pour les DAG ; interfaces `AgentExecutor` / `Planner` / `SkillResolver` / `ToolExecutor` / `MemoryResolver` / `Evaluator` ; evals/traces/metrics/coûts/events natifs ; frameworks externes éventuels seulement derrière `AgentExecutor`. Voir `docs/ADR/006-verse-native-agent-runtime.md`.
+
+### ADR freeze (Sprint 0)
+
+- **ADR-001 → ADR-006** sont **Accepted**.
+- **Contracts freeze v0** (`@at72-verse/contracts@0.1.0`) : API publiques internes officielles (Phase 02 validée).
+- **Tenancy schema v0** (`@at72-verse/db`) : référence plateforme (Phase 04 validée) ; Prisma = source de vérité domaine ; pas de logique métier dans Prisma.
+- **Auth v0** (`@at72-verse/auth` + NestJS API) : Phase 05 validée ; unique entrée auth ; RBAC métier = Phase 06.
+- **Jalon J0** atteint (Phases 01–06 validées) ; `RbacService` = unique décision permissions.
+- **Kernel v0** (`@at72-verse/verse-kernel`) : Phase 07 validée ; unique I/O agents↔infra ; StubKernelClient = référence tests/CI.
+- **Core v0** (`@at72-verse/verse-core`) : Phase 08 **validée** ; façade publique minimale ; runtime host d’orchestration ; adapters no-op ; aucun import agent/Adam ; providers futurs via adapters uniquement.
+- **Boundaries v0** : Phase 09 **validée** ; ESLint + dependency-cruiser ; allow-list agents/skills ; frontiers = invariants projet ; exceptions via décision d’archi uniquement.
+- **Bus v0** (`@at72-verse/bus`) : Phase 10 **validée** ; unique infra d’échange d’événements ; Redis encapsulé ; opaque aux agents (Kernel only) ; adapters futurs sans changer le métier.
+- **Runs v0** : Phase 11 **validée** ; Jalon **J1** atteint ; Runs = unité officielle d’exécution ; agents futurs rattachés à Run/RunStep ; bus toujours avec `run_id`.
+- **Runtime v0** : Phase 12 **validée** ; Jalon **J2** atteint (premier chemin d’exécution agent) ; Adam déterministe ; projections Runs côté API uniquement ; Runtime = unique moteur d’exécution.
+- **LLM v0** : Phase 13 **validée** ; Jalon **J3** atteint (socle LLM) ; OpenAI via Core adapters ; usage tokens via Bus→API ; Runtime host Core.

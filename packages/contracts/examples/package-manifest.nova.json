@@ -1,0 +1,27 @@
+{
+  "id": "pkg.nova",
+  "kind": "agent",
+  "version": "0.1.0",
+  "publisher": "at72",
+  "display_name": "Nova",
+  "description": "First-party content creation agent",
+  "icons": [],
+  "contracts": {
+    "min_core": "2.x",
+    "min_kernel": "2.x"
+  },
+  "permissions_requested": [
+    "skill.invoke:writing",
+    "tool.execute:web-search",
+    "memory.read:org.brand"
+  ],
+  "resources": {
+    "entrypoint": "agents/nova",
+    "manifests": ["agents/nova/agent.manifest.json"]
+  },
+  "pricing": {
+    "model": "free"
+  },
+  "categories": ["content"],
+  "tags": ["writing", "first-party"]
+}

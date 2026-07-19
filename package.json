@@ -1,0 +1,50 @@
+{
+  "name": "at72-verse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AT72 Verse — SaaS multi-agent platform monorepo",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "turbo run build",
+    "ci": "pnpm run lint && pnpm run boundaries && pnpm run typecheck && pnpm run test && pnpm run format:check",
+    "boundaries": "pnpm run boundaries:depcruise && pnpm run boundaries:prove",
+    "boundaries:depcruise": "depcruise agents skills packages/verse-core apps/api apps/agent-runtime --config .dependency-cruiser.mjs",
+    "boundaries:prove": "node scripts/boundaries/assert-violation-detected.mjs",
+    "dev": "node ./scripts/dev.mjs",
+    "docker:up": "docker compose --project-directory . -f infra/docker/docker-compose.yml up -d postgres redis",
+    "docker:up:minio": "docker compose --project-directory . -f infra/docker/docker-compose.yml --profile minio up -d",
+    "docker:ps": "docker compose --project-directory . -f infra/docker/docker-compose.yml ps",
+    "docker:down": "docker compose --project-directory . -f infra/docker/docker-compose.yml down",
+    "docker:down:volumes": "docker compose --project-directory . -f infra/docker/docker-compose.yml down -v",
+    "docker:check": "node scripts/check-docker-stack.mjs",
+    "db:generate": "pnpm --filter @at72-verse/db generate",
+    "db:migrate": "pnpm --filter @at72-verse/db migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @at72-verse/db migrate:dev",
+    "db:seed": "pnpm --filter @at72-verse/db seed",
+    "db:studio": "pnpm --filter @at72-verse/db studio",
+    "api:start": "pnpm --filter @at72-verse/api start",
+    "api:dev": "pnpm --filter @at72-verse/api dev",
+    "web:dev": "pnpm --filter @at72-verse/web dev",
+    "web:build": "pnpm --filter @at72-verse/web build",
+    "web:start": "pnpm --filter @at72-verse/web start",
+    "runtime:start": "pnpm --filter @at72-verse/agent-runtime start",
+    "runtime:dev": "pnpm --filter @at72-verse/agent-runtime dev"
+  },
+  "devDependencies": {
+    "@at72-verse/config-eslint": "workspace:*",
+    "@types/node": "^22.10.7",
+    "dependency-cruiser": "^16.10.0",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  }
+}

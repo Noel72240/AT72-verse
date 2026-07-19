@@ -1,0 +1,45 @@
+{
+  "name": "@at72-verse/agent-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Native agent runtime (ADR-006, Phase 12)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@at72-verse/agent-adam": "workspace:*",
+    "@at72-verse/agent-astra": "workspace:*",
+    "@at72-verse/agent-nova": "workspace:*",
+    "@at72-verse/agent-orion": "workspace:*",
+    "@at72-verse/agent-pixel": "workspace:*",
+    "@at72-verse/bus": "workspace:*",
+    "@at72-verse/contracts": "workspace:*",
+    "@at72-verse/db": "workspace:*",
+    "@at72-verse/skill-analysis": "workspace:*",
+    "@at72-verse/skill-image-generation": "workspace:*",
+    "@at72-verse/skill-seo": "workspace:*",
+    "@at72-verse/skill-writing": "workspace:*",
+    "@at72-verse/tool-file-read-write": "workspace:*",
+    "@at72-verse/tool-image-generate": "workspace:*",
+    "@at72-verse/tool-seo-audit": "workspace:*",
+    "@at72-verse/tool-web-search": "workspace:*",
+    "@at72-verse/verse-core": "workspace:*",
+    "@at72-verse/verse-kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@at72-verse/config-tsconfig": "workspace:*",
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

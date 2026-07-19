@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://at72.verse/schemas/persona-spec.json",
+  "title": "PersonaSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "agent_id",
+    "personality",
+    "tone",
+    "style",
+    "rules",
+    "memory",
+    "tools",
+    "skills",
+    "model_profiles",
+    "locale",
+    "safety_profile"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "agent_id": { "type": ["string", "null"] },
+    "personality": {
+      "type": "object",
+      "required": ["traits"],
+      "properties": {
+        "traits": { "type": "array", "items": { "type": "string" } },
+        "bio": { "type": "string" }
+      }
+    },
+    "tone": {
+      "type": "object",
+      "properties": {
+        "formality": { "type": "string" },
+        "language": { "type": "string" },
+        "voice": { "type": "string" }
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "structure": { "type": "string" },
+        "length": { "type": "string" },
+        "formatting": { "type": "string" }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "text"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["must", "should", "must_not"] },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "required": ["read_scopes", "write_scopes"],
+      "properties": {
+        "read_scopes": { "type": "array", "items": { "type": "string" } },
+        "write_scopes": { "type": "array", "items": { "type": "string" } },
+        "pin_policy": { "type": "string" }
+      }
+    },
+    "tools": { "type": "array", "items": { "type": "string" } },
+    "skills": { "type": "array", "items": { "type": "string" } },
+    "model_profiles": {
+      "type": "object",
+      "required": ["default"],
+      "properties": {
+        "default": { "type": "string" },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "locale": { "type": "string", "minLength": 2 },
+    "safety_profile": { "type": "string", "enum": ["standard", "strict"] }
+  }
+}

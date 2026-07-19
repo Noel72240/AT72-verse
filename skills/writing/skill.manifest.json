@@ -1,0 +1,32 @@
+﻿{
+  "id": "skill.writing",
+  "version": "0.1.0",
+  "name": "Writing",
+  "description": "Reusable writing and copy skill — produces text via Kernel.llm only.",
+  "input_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["brief"],
+    "properties": {
+      "brief": { "type": "string", "minLength": 1 },
+      "format": { "type": "string" },
+      "tone": { "type": "string" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["content"],
+    "properties": {
+      "content": { "type": "string", "minLength": 1 },
+      "title": { "type": "string" }
+    }
+  },
+  "default_model_profile": "creative-balanced",
+  "persona_hints": {
+    "prefer_style": "structured"
+  },
+  "tags": ["content", "copy"],
+  "eval_suite": "evals/writing-v0",
+  "permissions": ["skill.invoke:writing"]
+}

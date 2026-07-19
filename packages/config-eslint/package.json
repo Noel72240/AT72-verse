@@ -1,0 +1,19 @@
+{
+  "name": "@at72-verse/config-eslint",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared ESLint flat config for AT72 Verse",
+  "exports": {
+    ".": "./index.js",
+    "./boundaries": "./boundaries.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.18.0",
+    "typescript-eslint": "^8.21.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.0"
+  }
+}

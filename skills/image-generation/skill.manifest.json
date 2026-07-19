@@ -1,0 +1,10 @@
+﻿{
+  "id": "skill.image-generation",
+  "version": "0.1.0",
+  "name": "Image Generation",
+  "description": "Reusable image brief skill — optional image-generate stub.",
+  "default_model_profile": "creative-balanced",
+  "tags": ["image", "design"],
+  "eval_suite": "evals/image-generation-v0",
+  "permissions": ["skill.invoke:image-generation"]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@at72-verse/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Prisma schema, migrations, and tenancy data access (Phase 04)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "prisma",
+    "README.md"
+  ],
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
+    "seed": "tsx src/seed.ts",
+    "studio": "prisma studio",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "prisma generate && tsc --noEmit -p tsconfig.json",
+    "build": "prisma generate && tsc --noEmit -p tsconfig.json",
+    "test": "prisma generate && tsx --test src/**/*.test.ts",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "dependencies": {
+    "@at72-verse/contracts": "workspace:*",
+    "@prisma/client": "^6.5.0"
+  },
+  "devDependencies": {
+    "@at72-verse/config-tsconfig": "workspace:*",
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

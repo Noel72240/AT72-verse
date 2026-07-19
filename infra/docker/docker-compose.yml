@@ -1,0 +1,63 @@
+name: at72-verse-local
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: at72-verse-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-verse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verse}
+      POSTGRES_DB: ${POSTGRES_DB:-verse}
+    volumes:
+      - at72_verse_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-verse} -d ${POSTGRES_DB:-verse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: at72-verse-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - at72_verse_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: at72-verse-minio
+    profiles: ["minio"]
+    restart: unless-stopped
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-verse_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-verse_minio_secret}
+    command: ["server", "/data", "--console-address", ":9001"]
+    volumes:
+      - at72_verse_minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  at72_verse_pg_data:
+  at72_verse_redis_data:
+  at72_verse_minio_data:

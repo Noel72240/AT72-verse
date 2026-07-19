@@ -1,0 +1,8 @@
+﻿{
+  "id": "content-campaign",
+  "version": "0.1.0",
+  "status": "active",
+  "display_name": "Content Campaign",
+  "description": "Brief → parallel Nova + Astra + Pixel → checkpoint → finalize",
+  "package_id": "pkg.workflow.content-campaign"
+}

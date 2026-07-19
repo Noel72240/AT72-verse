@@ -1,0 +1,563 @@
+// AT72 Verse — tenancy schema (Phase 04)
+// Source of truth for identity / org / workspace (ARCHITECTURE §15.2, §23)
+// Auth provider mapping: optional clerk_user_id (ADR-004); roles align with Phase 06.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships      Membership[]
+  workspaces       Workspace[]
+  workspaceMembers WorkspaceMember[]
+  invitations      Invitation[]
+  conversations    Conversation[]
+  messages         Message[]
+  runs             Run[]
+  runSteps         RunStep[]
+  llmUsages        LlmUsage[]
+  personaOverrides PersonaOverride[]
+  memoryRecords    MemoryRecordRow[]
+  memoryEmbeddings MemoryEmbeddingRow[]
+  toolExecutions   ToolExecution[]
+  capabilityGrants CapabilityGrant[]
+  tenantPackages   TenantPackage[]
+  workflowDefinitions WorkflowDefinitionRow[]
+  workflowRuns     WorkflowRunRow[]
+
+  @@map("organizations")
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String?  @map("display_name")
+  /// IdP subject (Clerk). ADR-004.
+  clerkUserId String?  @unique @map("clerk_user_id")
+  avatarUrl   String?  @map("avatar_url")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships      Membership[]
+  workspaceMembers WorkspaceMember[]
+  invitationsSent  Invitation[]      @relation("InvitationInviter")
+  conversations    Conversation[]    @relation("ConversationCreator")
+  runsCreated      Run[]             @relation("RunCreator")
+  memoryRecords    MemoryRecordRow[]
+
+  @@map("users")
+}
+
+/// Organization membership (user ↔ org). ARCHITECTURE: `memberships`.
+model Membership {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  role           OrgRole  @default(VIEWER)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Workspace {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  slug           String
+  /// Default max USD per run when createRun omits budget (Phase 21 / DO5). Null = platform default.
+  defaultRunBudgetMaxUsd    Decimal? @map("default_run_budget_max_usd") @db.Decimal(12, 6)
+  /// Default max tokens per run. Null = platform default.
+  defaultRunBudgetMaxTokens Int?     @map("default_run_budget_max_tokens")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      WorkspaceMember[]
+  conversations Conversation[]
+  runs         Run[]
+  personaOverrides PersonaOverride[]
+  memoryRecords MemoryRecordRow[]
+  toolExecutions ToolExecution[]
+  capabilityGrants CapabilityGrant[]
+  workflowRuns     WorkflowRunRow[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  workspaceId    String        @map("workspace_id") @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  role           WorkspaceRole @default(VIEWER)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+/// Org invitation (Phase 06 Decision D1). Reissue = new row; history retained.
+model Invitation {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  email          String
+  role           OrgRole          @default(VIEWER)
+  /// Single-use opaque token.
+  token          String           @unique
+  status         InvitationStatus @default(PENDING)
+  invitedById    String?          @map("invited_by_id") @db.Uuid
+  expiresAt      DateTime         @map("expires_at") @db.Timestamptz(3)
+  acceptedAt     DateTime?        @map("accepted_at") @db.Timestamptz(3)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User?        @relation("InvitationInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, email])
+  @@index([status])
+  @@map("invitations")
+}
+
+// ─── Runs & conversations (Phase 11 / AA1) ───────────────────────────
+
+enum RunStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum RunStepStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+model Conversation {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  title           String?
+  /// Immutable creation timestamp.
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("ConversationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  messages     Message[]
+  runs         Run[]
+  memoryRecords MemoryRecordRow[]
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  conversationId String      @map("conversation_id") @db.Uuid
+  role           MessageRole
+  content        String
+  /// Immutable creation timestamp.
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Run {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  /// Nullable — system / API / scheduled runs without a chat thread (AB2).
+  conversationId  String?   @map("conversation_id") @db.Uuid
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  status          RunStatus @default(queued)
+  /// Immutable — never updated after insert.
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  startedAt       DateTime? @map("started_at") @db.Timestamptz(3)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(3)
+  error           Json?
+  metadata        Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  createdBy    User?        @relation("RunCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  steps        RunStep[]
+  llmUsages    LlmUsage[]
+  memoryRecords MemoryRecordRow[]
+  toolExecutions ToolExecution[]
+  workflowRuns   WorkflowRunRow[]
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([conversationId])
+  @@index([status])
+  @@map("runs")
+}
+
+model RunStep {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  runId          String        @map("run_id") @db.Uuid
+  /// Optional parent for future DAG (AC2) — unused by Phase 11 logic.
+  parentStepId   String?       @map("parent_step_id") @db.Uuid
+  /// Explicit execution order within the run (independent of id).
+  seq            Int
+  name           String
+  kind           String
+  agentId        String?       @map("agent_id")
+  status         RunStepStatus @default(queued)
+  input          Json?
+  output         Json?
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  run          Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  parent       RunStep?     @relation("RunStepTree", fields: [parentStepId], references: [id], onDelete: SetNull)
+  children     RunStep[]    @relation("RunStepTree")
+  toolExecutions ToolExecution[]
+
+  @@unique([runId, seq])
+  @@index([organizationId])
+  @@index([runId])
+  @@index([parentStepId])
+  @@map("run_steps")
+}
+
+/// LLM token usage ledger (Phase 13 / AW2) — written only by API projector.
+model LlmUsage {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  workspaceId        String   @map("workspace_id") @db.Uuid
+  runId              String?  @map("run_id") @db.Uuid
+  traceId            String   @map("trace_id")
+  llmCallId          String   @unique @map("llm_call_id")
+  agentId            String?  @map("agent_id")
+  profile            String
+  provider           String
+  model              String
+  inputTokens        Int      @map("input_tokens")
+  outputTokens       Int      @map("output_tokens")
+  credentialSource   String   @map("credential_source")
+  /// Deterministic USD estimate from Rate Card (Phase 21).
+  estimatedUsd       Decimal  @default(0) @map("estimated_usd") @db.Decimal(14, 8)
+  /// Rate card version used for estimatedUsd.
+  pricingVersion     String   @default("unknown") @map("pricing_version")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  run          Run?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([runId])
+  @@index([traceId])
+  @@map("llm_usages")
+}
+
+/// Org/workspace persona patches (Phase 17 / ADR-010). workspaceId null = org-level.
+model PersonaOverride {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// Null = organization-scoped override.
+  workspaceId    String?  @map("workspace_id") @db.Uuid
+  agentId        String   @map("agent_id")
+  /// Partial PersonaSpec patch (JSON).
+  patch          Json
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([agentId])
+  @@map("persona_overrides")
+}
+
+/// Memory L1/L2/L4 records (Phase 18 / DL1 · Phase 25 L4).
+model MemoryRecordRow {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  runId          String?   @map("run_id") @db.Uuid
+  conversationId String?   @map("conversation_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  agentId        String?   @map("agent_id")
+  traceId        String?   @map("trace_id")
+  scope          String
+  layer          String
+  type           String
+  content        String    @db.Text
+  pinned         Boolean   @default(false)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  run          Run?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  embedding    MemoryEmbeddingRow?
+
+  @@index([organizationId, scope])
+  @@index([organizationId, runId])
+  @@index([organizationId, conversationId])
+  @@index([organizationId, userId])
+  @@index([workspaceId])
+  @@map("memory_records")
+}
+
+/// Vector embeddings for L4 semantic recall (Phase 25 / ADR-007).
+/// Stored as pgvector; app also keeps dims/model for regenerability.
+model MemoryEmbeddingRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  memoryId       String   @unique @map("memory_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  scope          String
+  model          String
+  dims           Int
+  /// pgvector column — written/read via raw SQL in VectorIndexPort.
+  embedding      Unsupported("vector")?
+  /// JSON fallback / mirror for tooling (same values as vector).
+  embeddingJson  Json     @map("embedding_json")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memory       MemoryRecordRow @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, scope])
+  @@map("memory_embeddings")
+}
+
+/// Tool execution audit (Phase 19 / DM8). Official ledger of Kernel.tools.execute attempts.
+model ToolExecution {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  runId          String?  @map("run_id") @db.Uuid
+  stepId         String?  @map("step_id") @db.Uuid
+  traceId        String?  @map("trace_id")
+  agentId        String   @map("agent_id")
+  toolId         String   @map("tool_id")
+  toolVersion    String?  @map("tool_version")
+  status         String
+  durationMs     Int      @map("duration_ms")
+  error          String?  @db.Text
+  inputSummary   String?  @map("input_summary") @db.Text
+  outputSummary  String?  @map("output_summary") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  run          Run?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+  step         RunStep?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([runId])
+  @@index([stepId])
+  @@index([toolId])
+  @@index([traceId])
+  @@map("tool_executions")
+}
+
+/// Workspace capability enablement (Phase 20 / DN3).
+model CapabilityGrant {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  /// agent | skill | tool
+  kind           String
+  capabilityId   String   @map("capability_id")
+  enabled        Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, kind, capabilityId])
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([kind, capabilityId])
+  @@map("capability_grants")
+}
+
+/// Global package catalog entry (Phase 22 / DP4). package_id is stable & immutable.
+model Package {
+  id          String   @id @map("package_id")
+  kind        String
+  publisher   String
+  displayName String   @map("display_name")
+  description String   @default("")
+  /// Executable capability id (agent/skill/tool id) for Permission Engine linkage.
+  capabilityId String  @map("capability_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  versions       PackageVersion[]
+  tenantPackages TenantPackage[]
+
+  @@index([kind])
+  @@index([capabilityId])
+  @@map("packages")
+}
+
+/// Immutable published version of a package (Phase 22).
+model PackageVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  packageId   String   @map("package_id")
+  version     String
+  /// Full PackageManifest JSON — immutable after insert.
+  manifest    Json
+  publishedAt DateTime @default(now()) @map("published_at") @db.Timestamptz(3)
+
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, version])
+  @@index([packageId])
+  @@map("package_versions")
+}
+
+/// Org-level install + version pin (Phase 22 / DP5 · DP7).
+model TenantPackage {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  packageId      String    @map("package_id")
+  pinnedVersion  String    @map("pinned_version")
+  /// installed | uninstalled
+  status         String    @default("installed")
+  installedAt    DateTime  @default(now()) @map("installed_at") @db.Timestamptz(3)
+  uninstalledAt  DateTime? @map("uninstalled_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  package      Package      @relation(fields: [packageId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, packageId])
+  @@index([organizationId])
+  @@index([packageId])
+  @@index([status])
+  @@map("tenant_packages")
+}
+
+/// Workflow definition catalog (Phase 26 / DT5).
+model WorkflowDefinitionRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  workflowId     String   @map("workflow_id")
+  version        String
+  displayName    String   @map("display_name")
+  definition     Json
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, version])
+  @@index([organizationId])
+  @@map("workflow_definitions")
+}
+
+/// Workflow run instance (Phase 26 / DT5 · DT6).
+model WorkflowRunRow {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  workspaceId       String    @map("workspace_id") @db.Uuid
+  workflowId        String    @map("workflow_id")
+  workflowVersion   String    @map("workflow_version")
+  runId             String    @map("run_id") @db.Uuid
+  status            String    @default("queued")
+  definitionSnapshot Json     @map("definition_snapshot")
+  completedStepIds  Json      @default("[]") @map("completed_step_ids")
+  cursorStepId      String?   @map("cursor_step_id")
+  input             Json      @default("{}")
+  output            Json?
+  error             Json?
+  engineState       Json?     @map("engine_state")
+  createdByUserId   String?   @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  startedAt         DateTime? @map("started_at") @db.Timestamptz(3)
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  run          Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([runId])
+  @@index([status])
+  @@index([workflowId])
+  @@map("workflow_runs")
+}

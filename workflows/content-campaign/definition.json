@@ -1,0 +1,30 @@
+{
+  "id": "content-campaign",
+  "version": "0.1.0",
+  "display_name": "Content Campaign",
+  "description": "Declarative campaign fan-out (Phase 26 / DT3). Intelligence stays in agents.",
+  "trigger": "manual",
+  "steps": [
+    {
+      "id": "ingest_brief",
+      "kind": "memory_remember",
+      "scope": "run.working"
+    },
+    {
+      "id": "specialists",
+      "kind": "fan_out",
+      "needs": ["ingest_brief"],
+      "targets": ["nova", "astra", "pixel"]
+    },
+    {
+      "id": "review_gate",
+      "kind": "checkpoint",
+      "needs": ["specialists"]
+    },
+    {
+      "id": "finalize",
+      "kind": "noop",
+      "needs": ["review_gate"]
+    }
+  ]
+}

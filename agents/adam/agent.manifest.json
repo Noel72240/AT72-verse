@@ -1,0 +1,23 @@
+﻿{
+  "id": "adam",
+  "name": "Adam",
+  "version": "0.1.0",
+  "role": "orchestrator",
+  "description": "Default Verse orchestrator agent — plans and delegates via Kernel only.",
+  "kind": "orchestrator",
+  "default_persona": "persona.adam.default",
+  "skills": ["skill.orchestration"],
+  "tools_allowlist": [],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "orchestrate-precise",
+  "constraints": {
+    "max_tokens_per_run": 100000,
+    "max_tool_calls": 50,
+    "max_skill_invocations": 50,
+    "timeout_ms": 600000
+  },
+  "routing_hints": {
+    "keywords": ["orchestrate", "plan", "delegate"],
+    "priority": 100
+  }
+}

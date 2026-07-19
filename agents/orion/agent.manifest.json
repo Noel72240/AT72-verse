@@ -1,0 +1,23 @@
+﻿{
+  "id": "orion",
+  "name": "Orion",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Analysis specialist — insights via skill.analysis only.",
+  "kind": "specialist",
+  "default_persona": "persona.orion.default",
+  "skills": ["skill.analysis"],
+  "tools_allowlist": ["web-search"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["analyse", "analysis", "insight", "report", "data"],
+    "priority": 50
+  }
+}

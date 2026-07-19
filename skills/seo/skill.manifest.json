@@ -1,0 +1,10 @@
+﻿{
+  "id": "skill.seo",
+  "version": "0.1.0",
+  "name": "SEO",
+  "description": "Reusable SEO skill — audit + recommendations via Kernel.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["seo", "audit"],
+  "eval_suite": "evals/seo-v0",
+  "permissions": ["skill.invoke:seo"]
+}

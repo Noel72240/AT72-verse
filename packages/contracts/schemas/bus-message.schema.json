@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://at72.verse/schemas/bus-message.json",
+  "title": "BusMessage",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "event_id",
+    "correlation_id",
+    "causation_id",
+    "tenant_id",
+    "workspace_id",
+    "run_id",
+    "timestamp",
+    "version",
+    "event_type",
+    "payload"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1 },
+    "correlation_id": { "type": "string", "minLength": 1 },
+    "causation_id": { "type": "string", "minLength": 1 },
+    "tenant_id": { "type": "string", "minLength": 1 },
+    "workspace_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": ["string", "null"] },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "version": { "type": "string", "minLength": 1 },
+    "event_type": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@at72-verse/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js 15 SaaS web application (Phase 16)",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint src tests playwright.config.ts next.config.ts --max-warnings 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/timeline.test.ts",
+    "test:smoke": "playwright test --project=smoke"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@at72-verse/config-tsconfig": "workspace:*",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

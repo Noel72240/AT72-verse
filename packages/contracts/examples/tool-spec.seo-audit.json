@@ -1,0 +1,38 @@
+{
+  "id": "seo-audit",
+  "version": "0.1.0",
+  "description": "Run a read-only SEO audit for a URL or document",
+  "input_schema": {
+    "type": "object",
+    "required": ["url"],
+    "properties": {
+      "url": { "type": "string", "format": "uri" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["score", "findings"],
+    "properties": {
+      "score": { "type": "number" },
+      "findings": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "side_effect": false,
+  "auth": {
+    "type": "none"
+  },
+  "timeout_ms": 30000,
+  "retry_policy": {
+    "max_attempts": 2,
+    "backoff_ms": 500
+  },
+  "rate_limit": {
+    "max_per_minute": 30
+  },
+  "permission": "tool.execute:seo-audit",
+  "categories": ["seo"],
+  "package": {
+    "kind": "tool",
+    "package_id": "pkg.tool.seo-audit"
+  }
+}

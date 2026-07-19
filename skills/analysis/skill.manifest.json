@@ -1,0 +1,10 @@
+﻿{
+  "id": "skill.analysis",
+  "version": "0.1.0",
+  "name": "Analysis",
+  "description": "Reusable analysis skill — insights via Kernel.llm only.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["analysis", "insights"],
+  "eval_suite": "evals/analysis-v0",
+  "permissions": ["skill.invoke:analysis"]
+}

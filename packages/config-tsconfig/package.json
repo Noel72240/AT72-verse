@@ -1,0 +1,11 @@
+{
+  "name": "@at72-verse/config-tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript configurations for the AT72 Verse monorepo",
+  "files": [
+    "base.json",
+    "library.json",
+    "node.json"
+  ]
+}

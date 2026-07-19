@@ -1,0 +1,31 @@
+import { Injectable, UnauthorizedException, Inject } from "@nestjs/common";
+import type { CanActivate, ExecutionContext } from "@nestjs/common";
+import type { AuthProvider } from "@at72-verse/auth";
+import type { PrismaClient } from "@at72-verse/db";
+import { ensureVerseUser } from "../identity/ensure-verse-user.js";
+import { AUTH_PROVIDER, PRISMA, type RequestWithAuth } from "./auth.tokens.js";
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(
+    @Inject(AUTH_PROVIDER) private readonly authProvider: AuthProvider,
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<RequestWithAuth>();
+    const session = await this.authProvider.authenticateRequest({
+      headers: request.headers,
+    });
+    if (!session) {
+      throw new UnauthorizedException({
+        code: "unauthorized",
+        message: "Authentication required",
+      });
+    }
+
+    const user = await ensureVerseUser(this.prisma, session);
+    request.verseAuth = { session, user };
+    return true;
+  }
+}

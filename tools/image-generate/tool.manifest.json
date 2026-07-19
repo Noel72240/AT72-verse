@@ -1,0 +1,6 @@
+﻿{
+  "id": "image-generate",
+  "version": "0.1.0",
+  "kind": "tool",
+  "package": "@at72-verse/tool-image-generate"
+}

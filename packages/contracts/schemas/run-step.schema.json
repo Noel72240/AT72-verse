@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://at72.verse/schemas/run-step.json",
+  "title": "RunStep",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "organization_id",
+    "run_id",
+    "parent_step_id",
+    "seq",
+    "name",
+    "kind",
+    "agent_id",
+    "status",
+    "input",
+    "output",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "organization_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "parent_step_id": { "type": ["string", "null"] },
+    "seq": { "type": "integer", "minimum": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "agent_id": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed"]
+    },
+    "input": { "type": ["object", "null"] },
+    "output": { "type": ["object", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

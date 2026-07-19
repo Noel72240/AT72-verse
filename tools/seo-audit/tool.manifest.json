@@ -1,0 +1,6 @@
+﻿{
+  "id": "seo-audit",
+  "version": "0.1.0",
+  "kind": "tool",
+  "package": "@at72-verse/tool-seo-audit"
+}

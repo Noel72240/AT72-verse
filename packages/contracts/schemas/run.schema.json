@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://at72.verse/schemas/run.json",
+  "title": "Run",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "organization_id",
+    "workspace_id",
+    "conversation_id",
+    "created_by_user_id",
+    "status",
+    "created_at",
+    "updated_at",
+    "started_at",
+    "completed_at",
+    "error",
+    "metadata"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "organization_id": { "type": "string", "minLength": 1 },
+    "workspace_id": { "type": "string", "minLength": 1 },
+    "conversation_id": { "type": ["string", "null"] },
+    "created_by_user_id": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "started_at": { "type": ["string", "null"], "format": "date-time" },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" },
+    "error": { "type": ["object", "null"] },
+    "metadata": { "type": ["object", "null"] }
+  }
+}

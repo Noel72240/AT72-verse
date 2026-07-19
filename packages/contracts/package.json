@@ -1,0 +1,36 @@
+{
+  "name": "@at72-verse/contracts",
+  "version": "0.1.16",
+  "private": true,
+  "description": "Shared TypeScript contracts and JSON Schemas (freeze v0)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas/*": "./schemas/*",
+    "./examples/*": "./examples/*"
+  },
+  "files": [
+    "src",
+    "schemas",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts",
+    "validate:examples": "tsx src/validation/run-validate-cli.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "@at72-verse/config-tsconfig": "workspace:*",
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

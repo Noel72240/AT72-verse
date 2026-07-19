@@ -1,0 +1,6 @@
+﻿{
+  "id": "file-read-write",
+  "version": "0.1.0",
+  "kind": "tool",
+  "package": "@at72-verse/tool-file-read-write"
+}

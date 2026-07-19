@@ -1,0 +1,6 @@
+﻿{
+  "id": "web-search",
+  "version": "0.1.0",
+  "kind": "tool",
+  "package": "@at72-verse/tool-web-search"
+}

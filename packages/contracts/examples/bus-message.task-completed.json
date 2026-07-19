@@ -1,0 +1,16 @@
+{
+  "event_id": "01JEXAMPLEEVENT000000000001",
+  "correlation_id": "01JEXAMPLECORR0000000000001",
+  "causation_id": "01JEXAMPLECAUSE000000000001",
+  "tenant_id": "org_demo",
+  "workspace_id": "ws_demo",
+  "run_id": "run_demo_001",
+  "timestamp": "2026-07-18T10:00:00.000Z",
+  "version": "1.0.0",
+  "event_type": "task.completed",
+  "payload": {
+    "agent_id": "nova",
+    "step_id": "step_001",
+    "status": "completed"
+  }
+}
