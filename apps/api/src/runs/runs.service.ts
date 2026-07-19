@@ -263,23 +263,21 @@ export class RunsService {
     });
 
     if (targetAgent) {
-      // DN7 — refuse disabled agents before Runtime handleTask (snapshot frozen at dispatch).
-      const grantsSnapshot = await this.grants.assertAgentEnabled(
-        membership.organizationId,
-        input.workspaceId,
-        targetAgent,
-      );
-      // DP9 — refuse agents whose package is not installed for the org.
-      const packagesSnapshot = await this.packages.assertAgentPackageInstalled(
-        membership.organizationId,
-        targetAgent,
-      );
-      const overrides = await this.personas.loadOverridesForAgent(
-        membership.organizationId,
-        input.workspaceId,
-        targetAgent,
-      );
-      await dispatchAgentTask(this.bus, {
+      // Parallelize pre-dispatch checks — sequential Neon round-trips were ~10–20s.
+      const [grantsSnapshot, packagesSnapshot, overrides] = await Promise.all([
+        this.grants.assertAgentEnabled(
+          membership.organizationId,
+          input.workspaceId,
+          targetAgent,
+        ),
+        this.packages.assertAgentPackageInstalled(membership.organizationId, targetAgent),
+        this.personas.loadOverridesForAgent(
+          membership.organizationId,
+          input.workspaceId,
+          targetAgent,
+        ),
+      ]);
+      const traceId = await dispatchAgentTask(this.bus, {
         agentId: targetAgent,
         run: contractRun,
         step: contractStep,
@@ -289,25 +287,37 @@ export class RunsService {
         grantsSnapshot,
         budgetSnapshot,
         packagesSnapshot,
-      }).then(async (traceId) => {
-        await this.prisma.run.update({
-          where: { id: run.id },
-          data: {
-            metadata: asJson({
-              ...((run.metadata as Record<string, unknown> | null) ?? {}),
-              target_agent: targetAgent,
-              budget_snapshot: budgetSnapshot,
-              trace_id: traceId,
-            }),
-          },
-        });
-        getMetrics().runStatus.inc({ status: "queued", from: "create" });
       });
+      const meta = {
+        ...((run.metadata as Record<string, unknown> | null) ?? {}),
+        target_agent: targetAgent,
+        budget_snapshot: budgetSnapshot,
+        trace_id: traceId,
+      };
+      // Persist trace asynchronously — don't block the HTTP response.
+      void this.prisma.run
+        .update({
+          where: { id: run.id },
+          data: { metadata: asJson(meta) },
+        })
+        .then(() => {
+          getMetrics().runStatus.inc({ status: "queued", from: "create" });
+        })
+        .catch((err: unknown) => {
+          console.error(
+            "[runs.createRun] metadata update failed",
+            err instanceof Error ? err.message : String(err),
+          );
+        });
+
+      return {
+        run: toContractRun({ ...run, metadata: meta as never }),
+        steps: [contractStep],
+      };
     }
 
-    const refreshed = await this.prisma.run.findUniqueOrThrow({ where: { id: run.id } });
     return {
-      run: toContractRun(refreshed),
+      run: contractRun,
       steps: [contractStep],
     };
   }

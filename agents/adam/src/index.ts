@@ -210,7 +210,7 @@ function heuristicPlan(goal: string): AdamLlmPlan {
       summary: "Delegate analysis to Orion",
     };
   }
-  if (/linkedin|rédige|redige|write|post|poste|article|blog|content|contenu|annonce|réseau|reseau|social/.test(g)) {
+  if (/linkedin|facebook|instagram|rédige|redige|write|post|poste|article|blog|content|contenu|annonce|réseau|reseau|social/.test(g)) {
     return { mode: "single", delegate_to: "nova", brief: goal, summary: "Delegate writing to Nova" };
   }
   return { mode: "none", delegate_to: "none", summary: "Direct conversational reply" };
@@ -264,15 +264,18 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
     return directChatReply(ctx, goal, resolved);
   }
 
-  const completion = await ctx.kernel.llm.complete({
-    profile: "orchestrate-precise",
-    messages: [
-      { role: "system", content: ADAM_PLANNER_SYSTEM },
-      { role: "user", content: goal },
-    ],
-  });
-
-  let llmPlan = parseAdamLlmPlan(completion.content, goal);
+  // Skip planner LLM when the goal clearly maps to a specialist (faster posts / SEO / etc.).
+  let llmPlan = heuristicPlan(goal);
+  if (llmPlan.mode === "none") {
+    const completion = await ctx.kernel.llm.complete({
+      profile: "fast-cheap",
+      messages: [
+        { role: "system", content: ADAM_PLANNER_SYSTEM },
+        { role: "user", content: goal },
+      ],
+    });
+    llmPlan = parseAdamLlmPlan(completion.content, goal);
+  }
   // Safety net: never campaign on tiny goals even if the planner misfires.
   if (llmPlan.mode === "campaign" && goal.trim().length < 48) {
     llmPlan = { mode: "none", delegate_to: "none", summary: "Prefer direct reply for short goal" };
