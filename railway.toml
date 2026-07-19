@@ -1,4 +1,5 @@
 # Railway — Nest API (monorepo)
+# Trigger: ensure services deploy from valid TOML + Dockerfile.api
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "infra/docker/Dockerfile.api"
