@@ -530,9 +530,6 @@ async function ensureChildRunStep(
 ): Promise<void> {
   if (!prisma) return;
 
-  const existing = await prisma.runStep.findUnique({ where: { id: input.stepId } });
-  if (existing) return;
-
   const run = await prisma.run.findUnique({ where: { id: input.runId } });
   if (!run) return;
 
@@ -544,26 +541,46 @@ async function ensureChildRunStep(
     }
   }
 
-  const agg = await prisma.runStep.aggregate({
-    where: { runId: run.id },
-    _max: { seq: true },
-  });
-  const seq = (agg._max.seq ?? 0) + 1;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const existing = await prisma.runStep.findUnique({ where: { id: input.stepId } });
+    if (existing) return;
 
-  await prisma.runStep.create({
-    data: {
-      id: input.stepId,
-      organizationId: run.organizationId,
-      runId: run.id,
-      parentStepId,
-      seq,
-      name: input.name,
-      kind: input.kind,
-      agentId: input.agentId,
-      status: "running",
-      input: input.input as never,
-    },
-  });
+    const agg = await prisma.runStep.aggregate({
+      where: { runId: run.id },
+      _max: { seq: true },
+    });
+    const seq = (agg._max.seq ?? 0) + 1;
+
+    try {
+      await prisma.runStep.create({
+        data: {
+          id: input.stepId,
+          organizationId: run.organizationId,
+          runId: run.id,
+          parentStepId,
+          seq,
+          name: input.name,
+          kind: input.kind,
+          agentId: input.agentId,
+          status: "running",
+          input: input.input as never,
+        },
+      });
+      return;
+    } catch (err) {
+      if (!isPrismaUniqueViolation(err)) throw err;
+      // Race with API projector (same step id or seq) — retry or accept winner.
+    }
+  }
+}
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: string }).code === "P2002"
+  );
 }
 
 async function publishTaskDelegated(

@@ -557,20 +557,37 @@ export class RunsService {
     });
     const seq = (agg._max.seq ?? 0) + 1;
 
-    const step = await this.prisma.runStep.create({
-      data: {
-        id: input.step_id,
-        organizationId: run.organizationId,
-        runId: run.id,
-        parentStepId,
-        seq,
-        name: input.name,
-        kind: input.kind,
-        agentId: input.agent_id,
-        input: asJson(input.input),
-        status: "running",
-      },
-    });
+    let step;
+    try {
+      step = await this.prisma.runStep.create({
+        data: {
+          id: input.step_id,
+          organizationId: run.organizationId,
+          runId: run.id,
+          parentStepId,
+          seq,
+          name: input.name,
+          kind: input.kind,
+          agentId: input.agent_id,
+          input: asJson(input.input),
+          status: "running",
+        },
+      });
+    } catch (err) {
+      // Embedded runtime may insert the same child step first (id or seq race).
+      const raced = await this.prisma.runStep.findUnique({ where: { id: input.step_id } });
+      if (
+        raced &&
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        (err as { code?: string }).code === "P2002"
+      ) {
+        step = raced;
+      } else {
+        throw err;
+      }
+    }
 
     let contractRun = toContractRun(run);
     if (run.status === "queued") {
