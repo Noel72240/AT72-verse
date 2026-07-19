@@ -90,7 +90,9 @@ describe("OAuthConnector Phase 28a", () => {
     assert.equal(connected.provider, "facebook");
     assert.equal(connected.status, "connected");
     const token = await oauth.resolveAccessToken({ workspace_id: ws, provider: "facebook" });
-    assert.equal(token, "stub-meta-access-fb-code");
+    assert.equal(token, "stub-page-token-fb-code");
+    const pages = await oauth.listMetaPages({ workspace_id: ws });
+    assert.equal(pages.selected_page_name, "AlloTech72");
   });
 
   it("connect facebook via Meta stub also marks instagram connected", async () => {

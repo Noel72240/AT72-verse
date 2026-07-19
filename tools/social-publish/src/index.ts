@@ -147,20 +147,8 @@ export async function execute(ctx: ToolExecuteContext): Promise<Record<string, u
     };
   }
 
-  if (platform.toLowerCase() !== "linkedin") {
-    throw new KernelError(
-      "NOT_IMPLEMENTED",
-      `Live social-publish for ${platform} is not available yet — connect works; use dry-run or LinkedIn for live publish`,
-      {
-        details: { platform, code: "LIVE_PUBLISH_PLATFORM_PENDING" },
-      },
-    );
-  }
-
   const token = ctx.oauth?.access_token;
   if (!token) {
-    // ToolRuntime should have thrown CONNECTOR_NOT_CONNECTED before execute;
-    // defensive guard if host mis-wires.
     throw new KernelError(
       "CONNECTOR_NOT_CONNECTED",
       "OAuth access token missing for live publish",
@@ -168,18 +156,96 @@ export async function execute(ctx: ToolExecuteContext): Promise<Record<string, u
     );
   }
 
-  const published = await linkedInPublish.publishMemberPost({
-    access_token: token,
-    content,
-  });
+  const platformKey = platform.toLowerCase();
 
-  return {
-    mode: "live",
-    published: true,
-    platform: "linkedin",
-    external_post_id: published.external_post_id,
-    published_at: new Date().toISOString(),
-  };
+  if (platformKey === "linkedin") {
+    const published = await linkedInPublish.publishMemberPost({
+      access_token: token,
+      content,
+    });
+    return {
+      mode: "live",
+      published: true,
+      platform: "linkedin",
+      external_post_id: published.external_post_id,
+      published_at: new Date().toISOString(),
+    };
+  }
+
+  if (platformKey === "facebook") {
+    const pageId = ctx.oauth?.page_id;
+    if (!pageId) {
+      throw new KernelError(
+        "INVALID_INPUT",
+        "No Facebook Page selected — reconnect Meta and choose AlloTech72 on /connectors",
+        { details: { code: "META_PAGE_REQUIRED" } },
+      );
+    }
+    const published = await publishFacebookPagePost({
+      access_token: token,
+      page_id: pageId,
+      content,
+    });
+    return {
+      mode: "live",
+      published: true,
+      platform: "facebook",
+      external_post_id: published.external_post_id,
+      published_at: new Date().toISOString(),
+    };
+  }
+
+  if (platformKey === "instagram") {
+    const igUserId = ctx.oauth?.ig_user_id;
+    if (!igUserId) {
+      throw new KernelError(
+        "INVALID_INPUT",
+        "No Instagram Business account linked to the selected Facebook Page",
+        { details: { code: "IG_USER_REQUIRED" } },
+      );
+    }
+    throw new KernelError(
+      "NOT_IMPLEMENTED",
+      "Live Instagram publish needs an image URL (Graph API). Facebook Page text posts work now — IG media publish arrives next.",
+      { details: { code: "IG_MEDIA_REQUIRED", ig_user_id: igUserId } },
+    );
+  }
+
+  throw new KernelError(
+    "NOT_IMPLEMENTED",
+    `Live social-publish for ${platform} is not available yet`,
+    { details: { platform, code: "LIVE_PUBLISH_PLATFORM_PENDING" } },
+  );
+}
+
+async function publishFacebookPagePost(input: {
+  access_token: string;
+  page_id: string;
+  content: string;
+  fetchImpl?: typeof fetch;
+}): Promise<{ external_post_id: string }> {
+  if (isStubToken(input.access_token) || input.page_id.startsWith("stub-")) {
+    return { external_post_id: `fb_stub_${Date.now()}` };
+  }
+  const fetchImpl = input.fetchImpl ?? globalThis.fetch.bind(globalThis);
+  const u = new URL(`https://graph.facebook.com/v21.0/${encodeURIComponent(input.page_id)}/feed`);
+  const body = new URLSearchParams({
+    message: input.content,
+    access_token: input.access_token,
+  });
+  const res = await fetchImpl(u.toString(), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!res.ok) {
+    throw new KernelError("PROVIDER_ERROR", "Facebook Page feed publish failed", {
+      details: { status: res.status },
+      retryable: res.status === 429,
+    });
+  }
+  const json = (await res.json()) as { id?: string };
+  return { external_post_id: json.id ?? `fb_${Date.now()}` };
 }
 
 export const packageName = "@at72-verse/tool-social-publish" as const;

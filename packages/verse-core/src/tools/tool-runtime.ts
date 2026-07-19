@@ -407,6 +407,21 @@ export class ToolRuntime {
           );
         }
         oauth = { provider, access_token: accessToken };
+        if (provider === "facebook" || provider === "instagram") {
+          const meta = await this.oauthConnector.resolveMetaPublishContext({
+            workspace_id: context.workspace_id,
+            provider,
+          });
+          if (meta) {
+            oauth = {
+              provider,
+              access_token: meta.access_token,
+              ...(meta.page_id ? { page_id: meta.page_id } : {}),
+              ...(meta.page_name ? { page_name: meta.page_name } : {}),
+              ...(meta.ig_user_id ? { ig_user_id: meta.ig_user_id } : {}),
+            };
+          }
+        }
       }
 
       output = await withTimeout(

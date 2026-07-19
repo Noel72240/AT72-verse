@@ -314,7 +314,7 @@ export class OAuthConnector {
 
   /**
    * Resolve access token for ToolRuntime live path (Phase 28b).
-   * Caller (Core only) must not log/persist/bus the return value.
+   * Meta: prefers Page token (publish as AlloTech72), not the user profile token.
    */
   async resolveAccessToken(input: {
     workspace_id: string;
@@ -328,7 +328,125 @@ export class OAuthConnector {
       ref: row.vault_ref,
     });
     if (!plaintext) return null;
-    return parseTokenBundle(plaintext).access_token;
+    const bundle = parseTokenBundle(plaintext);
+    if (
+      (input.provider === "facebook" || input.provider === "instagram") &&
+      bundle.page_access_token
+    ) {
+      return bundle.page_access_token;
+    }
+    return bundle.access_token;
+  }
+
+  /** Public Page list (no tokens) for UI selection. */
+  async listMetaPages(input: {
+    workspace_id: string;
+  }): Promise<{
+    selected_page_id: string | null;
+    selected_page_name: string | null;
+    pages: Array<{ id: string; name: string; has_instagram: boolean }>;
+  }> {
+    const row =
+      (await this.store.getByWorkspaceProvider(input.workspace_id, "facebook")) ??
+      (await this.store.getByWorkspaceProvider(input.workspace_id, "instagram"));
+    if (!row || row.status !== "connected") {
+      return { selected_page_id: null, selected_page_name: null, pages: [] };
+    }
+    const plaintext = await this.vault.get({
+      organization_id: row.organization_id,
+      workspace_id: row.workspace_id,
+      ref: row.vault_ref,
+    });
+    if (!plaintext) {
+      return { selected_page_id: null, selected_page_name: null, pages: [] };
+    }
+    const bundle = parseTokenBundle(plaintext);
+    const pages = (bundle.meta_pages ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      has_instagram: Boolean(p.ig_user_id),
+    }));
+    return {
+      selected_page_id: bundle.page_id ?? null,
+      selected_page_name: bundle.page_name ?? null,
+      pages,
+    };
+  }
+
+  /** Pin which Facebook Page (e.g. AlloTech72) receives live posts. */
+  async selectMetaPage(input: {
+    workspace_id: string;
+    page_id: string;
+  }): Promise<ConnectorConnectionPublic | null> {
+    const providers: ConnectorProviderId[] = ["facebook", "instagram"];
+    let primary: ConnectorConnectionPublic | null = null;
+    for (const provider of providers) {
+      const row = await this.store.getByWorkspaceProvider(input.workspace_id, provider);
+      if (!row || row.status !== "connected") continue;
+      const plaintext = await this.vault.get({
+        organization_id: row.organization_id,
+        workspace_id: row.workspace_id,
+        ref: row.vault_ref,
+      });
+      if (!plaintext) continue;
+      const bundle = parseTokenBundle(plaintext);
+      const page = (bundle.meta_pages ?? []).find((p) => p.id === input.page_id);
+      if (!page) {
+        throw Object.assign(new Error("META_PAGE_NOT_FOUND"), { code: "META_PAGE_NOT_FOUND" });
+      }
+      const next: OAuthTokenBundle = {
+        ...bundle,
+        page_id: page.id,
+        page_name: page.name,
+        page_access_token: page.access_token,
+        ...(page.ig_user_id ? { ig_user_id: page.ig_user_id } : { ig_user_id: undefined }),
+        external_account_hint: `Page ${page.name}`,
+      };
+      await this.vault.put({
+        organization_id: row.organization_id,
+        workspace_id: row.workspace_id,
+        ref: row.vault_ref,
+        plaintext: serializeTokenBundle(next),
+      });
+      const now = new Date().toISOString();
+      const updated = await this.store.upsert({
+        ...row,
+        external_account_hint: `Page ${page.name}`,
+        updated_at: now,
+      });
+      if (provider === "facebook") primary = toPublicConnection(updated);
+      if (!primary) primary = toPublicConnection(updated);
+    }
+    return primary;
+  }
+
+  /** Expose IG user id for Instagram Graph publish (Core only). */
+  async resolveMetaPublishContext(input: {
+    workspace_id: string;
+    provider: "facebook" | "instagram";
+  }): Promise<{
+    access_token: string;
+    page_id: string | null;
+    page_name: string | null;
+    ig_user_id: string | null;
+  } | null> {
+    const row = await this.store.getByWorkspaceProvider(input.workspace_id, input.provider);
+    if (!row || row.status !== "connected") return null;
+    const plaintext = await this.vault.get({
+      organization_id: row.organization_id,
+      workspace_id: row.workspace_id,
+      ref: row.vault_ref,
+    });
+    if (!plaintext) return null;
+    const bundle = parseTokenBundle(plaintext);
+    const access_token = bundle.page_access_token ?? bundle.access_token;
+    if (!access_token) return null;
+    return {
+      access_token,
+      page_id: bundle.page_id ?? null,
+      page_name: bundle.page_name ?? null,
+      ig_user_id: bundle.ig_user_id ?? null,
+    };
   }
 
   private purgeExpiredPending(): void {
@@ -344,6 +462,11 @@ function serializeTokenBundle(tokens: OAuthTokenBundle): string {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token ?? null,
     expires_in: tokens.expires_in ?? null,
+    page_id: tokens.page_id ?? null,
+    page_name: tokens.page_name ?? null,
+    page_access_token: tokens.page_access_token ?? null,
+    ig_user_id: tokens.ig_user_id ?? null,
+    meta_pages: tokens.meta_pages ?? null,
   });
 }
 
@@ -352,10 +475,20 @@ function parseTokenBundle(plaintext: string): OAuthTokenBundle {
     access_token: string;
     refresh_token?: string | null;
     expires_in?: number | null;
+    page_id?: string | null;
+    page_name?: string | null;
+    page_access_token?: string | null;
+    ig_user_id?: string | null;
+    meta_pages?: OAuthTokenBundle["meta_pages"] | null;
   };
   return {
     access_token: json.access_token,
     refresh_token: json.refresh_token ?? undefined,
     expires_in: json.expires_in ?? undefined,
+    ...(json.page_id ? { page_id: json.page_id } : {}),
+    ...(json.page_name ? { page_name: json.page_name } : {}),
+    ...(json.page_access_token ? { page_access_token: json.page_access_token } : {}),
+    ...(json.ig_user_id ? { ig_user_id: json.ig_user_id } : {}),
+    ...(json.meta_pages ? { meta_pages: json.meta_pages } : {}),
   };
 }

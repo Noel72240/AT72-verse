@@ -114,4 +114,34 @@ export class ConnectorsService implements OnModuleInit {
     });
     return { ok: true };
   }
+
+  async listMetaPages(workspaceId: string, userId: string) {
+    await this.workspaceOrThrow(workspaceId);
+    await this.rbac.requireWorkspaceMember(userId, workspaceId, "VIEWER");
+    return this.core.getOAuthConnector().listMetaPages({ workspace_id: workspaceId });
+  }
+
+  async selectMetaPage(workspaceId: string, userId: string, pageId: string) {
+    await this.workspaceOrThrow(workspaceId);
+    await this.rbac.requireWorkspaceMember(userId, workspaceId, "EDITOR");
+    try {
+      const connection = await this.core.getOAuthConnector().selectMetaPage({
+        workspace_id: workspaceId,
+        page_id: pageId,
+      });
+      if (!connection) {
+        throw new NotFoundException({
+          code: "not_found",
+          message: "No Meta connector connected for this workspace",
+        });
+      }
+      return connection;
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "META_PAGE_NOT_FOUND") {
+        throw new BadRequestException({ code, message: "Page not found in Meta connection" });
+      }
+      throw err;
+    }
+  }
 }

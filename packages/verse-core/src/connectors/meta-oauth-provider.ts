@@ -7,11 +7,81 @@ import type { OAuthProviderPort, OAuthTokenBundle } from "./linkedin-oauth-provi
 
 const GRAPH_VERSION = "v21.0";
 
+export type MetaPagePublic = {
+  id: string;
+  name: string;
+  has_instagram: boolean;
+};
+
+/** Load Pages administered by the user; prefer AlloTech72 when present. */
+export async function fetchMetaPagesForToken(
+  userAccessToken: string,
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+): Promise<Partial<OAuthTokenBundle>> {
+  const u = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`);
+  u.searchParams.set(
+    "fields",
+    "id,name,access_token,instagram_business_account{id}",
+  );
+  u.searchParams.set("access_token", userAccessToken);
+  const res = await fetchImpl(u.toString());
+  if (!res.ok) {
+    return {};
+  }
+  const json = (await res.json()) as {
+    data?: Array<{
+      id?: string;
+      name?: string;
+      access_token?: string;
+      instagram_business_account?: { id?: string };
+    }>;
+  };
+  const meta_pages = (json.data ?? [])
+    .filter((p) => p.id && p.name && p.access_token)
+    .map((p) => ({
+      id: p.id!,
+      name: p.name!,
+      access_token: p.access_token!,
+      ...(p.instagram_business_account?.id
+        ? { ig_user_id: p.instagram_business_account.id }
+        : {}),
+    }));
+  if (meta_pages.length === 0) return { meta_pages: [] };
+
+  const preferred =
+    meta_pages.find((p) => /allotech/i.test(p.name)) ??
+    (meta_pages.length === 1 ? meta_pages[0] : undefined);
+
+  if (!preferred) {
+    return { meta_pages };
+  }
+  return {
+    meta_pages,
+    page_id: preferred.id,
+    page_name: preferred.name,
+    page_access_token: preferred.access_token,
+    ...(preferred.ig_user_id ? { ig_user_id: preferred.ig_user_id } : {}),
+  };
+}
+
 const META_SCOPES: Record<"facebook" | "instagram", readonly string[]> = {
-  // Dev apps with Facebook Login only accept basic Login scopes until
-  // Pages / Instagram products + App Review are added in Meta dashboard.
-  facebook: ["public_profile"],
-  instagram: ["public_profile"],
+  // Requires +Ajouter in Meta App → Facebook Login → Permissions (dev/tester OK).
+  facebook: [
+    "public_profile",
+    "pages_show_list",
+    "pages_manage_posts",
+    "pages_read_engagement",
+    "instagram_basic",
+    "instagram_content_publish",
+  ],
+  instagram: [
+    "public_profile",
+    "pages_show_list",
+    "pages_manage_posts",
+    "pages_read_engagement",
+    "instagram_basic",
+    "instagram_content_publish",
+  ],
 };
 
 export function metaScopesFor(provider: "facebook" | "instagram"): readonly string[] {
@@ -50,7 +120,19 @@ export class StubMetaOAuthProvider implements OAuthProviderPort {
     return {
       access_token: `stub-meta-access-${input.code.trim()}`,
       expires_in: 3600,
-      external_account_hint: `stub-${this.provider}-account`,
+      external_account_hint: "Page AlloTech72 (stub)",
+      page_id: "stub-page-allotech72",
+      page_name: "AlloTech72",
+      page_access_token: `stub-page-token-${input.code.trim()}`,
+      ig_user_id: "stub-ig-allotech72",
+      meta_pages: [
+        {
+          id: "stub-page-allotech72",
+          name: "AlloTech72",
+          access_token: `stub-page-token-${input.code.trim()}`,
+          ig_user_id: "stub-ig-allotech72",
+        },
+      ],
     };
   }
 
@@ -105,6 +187,7 @@ export class MetaOAuthProvider implements OAuthProviderPort {
     }
 
     let hint: string | undefined;
+    let pageFields: Partial<OAuthTokenBundle> = {};
     try {
       const meRes = await this.fetchImpl(
         `https://graph.facebook.com/${GRAPH_VERSION}/me?fields=id,name&access_token=${encodeURIComponent(json.access_token)}`,
@@ -117,10 +200,20 @@ export class MetaOAuthProvider implements OAuthProviderPort {
       /* hint is optional */
     }
 
+    try {
+      pageFields = await fetchMetaPagesForToken(json.access_token, this.fetchImpl);
+      if (pageFields.page_name) {
+        hint = `Page ${pageFields.page_name}`;
+      }
+    } catch {
+      /* pages optional until permissions granted */
+    }
+
     return {
       access_token: json.access_token,
       expires_in: json.expires_in,
       external_account_hint: hint ?? `meta-${this.provider}`,
+      ...pageFields,
     };
   }
 

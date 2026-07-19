@@ -17,8 +17,15 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
-      build: "meta-dual-fb-ig-connect",
-      meta_oauth_scopes: ["public_profile"],
+      build: "meta-page-allotech72-publish",
+      meta_oauth_scopes: [
+        "public_profile",
+        "pages_show_list",
+        "pages_manage_posts",
+        "pages_read_engagement",
+        "instagram_basic",
+        "instagram_content_publish",
+      ],
     };
   }
 
@@ -36,7 +43,7 @@ export class HealthController {
         organizations,
         memberships,
         packages,
-        build: "meta-dual-fb-ig-connect",
+        build: "meta-page-allotech72-publish",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

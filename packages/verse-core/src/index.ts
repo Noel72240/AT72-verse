@@ -166,6 +166,8 @@ export {
   createMetaOAuthProvider,
   metaScopesFor,
   isMetaProvider,
+  fetchMetaPagesForToken,
+  type MetaPagePublic,
 } from "./connectors/meta-oauth-provider.js";
 
 export const packageName = "@at72-verse/verse-core" as const;

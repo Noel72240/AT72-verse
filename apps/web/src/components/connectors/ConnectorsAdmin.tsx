@@ -16,8 +16,11 @@ import {
   setStoredWorkspaceId,
   startWorkspaceConnector,
   type ApiConnectorConnection,
+  type ApiMetaPage,
   type OrgMembership,
   type Workspace,
+  listMetaPages,
+  selectMetaPage,
 } from "@/lib/api";
 
 const PROVIDERS = [
@@ -29,12 +32,12 @@ const PROVIDERS = [
   {
     id: "facebook" as const,
     label: "Facebook",
-    hint: "Connexion Meta (compte Leon / admin Allotech72). Live publication bientôt.",
+    hint: "Publie sur la Page AlloTech72 (pas le mur perso de Léon). Reconnecte après avoir ajouté les permissions Pages dans Meta.",
   },
   {
     id: "instagram" as const,
     label: "Instagram",
-    hint: "Meta ouvre Facebook Login (normal). Une connexion Meta active FB + IG.",
+    hint: "Compte Pro lié à la Page Facebook AlloTech72. Live texte FB d’abord ; IG media ensuite.",
   },
 ];
 
@@ -44,6 +47,9 @@ export function ConnectorsAdmin() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [connections, setConnections] = useState<ApiConnectorConnection[]>([]);
+  const [metaPages, setMetaPages] = useState<ApiMetaPage[]>([]);
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [selectedPageName, setSelectedPageName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +114,20 @@ export function ConnectorsAdmin() {
     try {
       const res = await listWorkspaceConnectors(workspaceId);
       setConnections(res.connections);
+      const metaConnected = res.connections.some(
+        (c) =>
+          (c.provider === "facebook" || c.provider === "instagram") && c.status === "connected",
+      );
+      if (metaConnected) {
+        const pages = await listMetaPages(workspaceId);
+        setMetaPages(pages.pages);
+        setSelectedPageId(pages.selected_page_id);
+        setSelectedPageName(pages.selected_page_name);
+      } else {
+        setMetaPages([]);
+        setSelectedPageId(null);
+        setSelectedPageName(null);
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
     } finally {
@@ -160,6 +180,21 @@ export function ConnectorsAdmin() {
     }
   }
 
+  async function onSelectPage(pageId: string) {
+    if (!workspaceId || !pageId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await selectMetaPage(workspaceId, pageId);
+      setNotice("Page sélectionnée pour les publications");
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "0 1rem" }}>
       <nav style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
@@ -185,9 +220,8 @@ export function ConnectorsAdmin() {
 
       <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Connecteurs</h1>
       <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-        LinkedIn = connexion LinkedIn. Facebook et Instagram = <strong>Meta</strong> : le bouton
-        Instagram ouvre aussi l&apos;écran Facebook Login (compte Leon) — c&apos;est normal. Une
-        connexion Meta active les deux.
+        LinkedIn = profil LinkedIn. Facebook/Instagram = Meta (compte Léon) puis publication sur la{" "}
+        <strong>Page AlloTech72</strong>. Une connexion Meta active FB + IG.
       </p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -230,6 +264,35 @@ export function ConnectorsAdmin() {
       ) : null}
       {error ? (
         <p style={{ color: "var(--danger, #c44)", marginBottom: "1rem" }}>{error}</p>
+      ) : null}
+
+      {metaPages.length > 0 ? (
+        <section
+          style={{
+            padding: "1rem 0",
+            marginBottom: "0.5rem",
+            borderTop: "1px solid var(--border, #333)",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: "0.35rem" }}>Page Facebook (cible des posts)</div>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+            Choisis <strong>AlloTech72</strong> pour publier sur la Page (pas le profil Léon).
+            {selectedPageName ? ` Actuelle : ${selectedPageName}.` : ""}
+          </p>
+          <select
+            value={selectedPageId ?? ""}
+            disabled={busy || !workspaceId}
+            onChange={(e) => void onSelectPage(e.target.value)}
+          >
+            <option value="">— Choisir une Page —</option>
+            {metaPages.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.has_instagram ? " · IG lié" : ""}
+              </option>
+            ))}
+          </select>
+        </section>
       ) : null}
 
       {PROVIDERS.map((p) => {

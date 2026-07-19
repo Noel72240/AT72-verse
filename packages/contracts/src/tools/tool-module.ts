@@ -18,6 +18,11 @@ export type ToolExecuteContext = {
   oauth?: {
     provider: string;
     access_token: string;
+    /** Meta Page id when publishing as a Page (e.g. AlloTech72). */
+    page_id?: string;
+    page_name?: string;
+    /** Instagram Graph user id linked to the Page. */
+    ig_user_id?: string;
   };
 };
 

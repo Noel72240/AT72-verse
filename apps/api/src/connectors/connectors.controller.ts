@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -9,6 +10,7 @@ import {
   Req,
   Res,
   UseGuards,
+  BadRequestException,
 } from "@nestjs/common";
 import type { Response } from "express";
 import { AuthGuard } from "../auth/auth.guard.js";
@@ -48,6 +50,28 @@ export class ConnectorsController {
     @Param("provider") provider: string,
   ) {
     return this.connectors.disconnect(workspaceId, req.verseAuth!.user.id, provider);
+  }
+
+  @Get("workspaces/:workspaceId/connectors/meta/pages")
+  @UseGuards(AuthGuard, RbacGuard)
+  @RequireWorkspaceMember("VIEWER")
+  listMetaPages(@Req() req: RequestWithAuth, @Param("workspaceId") workspaceId: string) {
+    return this.connectors.listMetaPages(workspaceId, req.verseAuth!.user.id);
+  }
+
+  @Post("workspaces/:workspaceId/connectors/meta/pages/select")
+  @UseGuards(AuthGuard, RbacGuard)
+  @RequireWorkspaceMember("EDITOR")
+  selectMetaPage(
+    @Req() req: RequestWithAuth,
+    @Param("workspaceId") workspaceId: string,
+    @Body() body: { page_id?: string },
+  ) {
+    const pageId = typeof body?.page_id === "string" ? body.page_id.trim() : "";
+    if (!pageId) {
+      throw new BadRequestException({ code: "invalid_input", message: "page_id required" });
+    }
+    return this.connectors.selectMetaPage(workspaceId, req.verseAuth!.user.id, pageId);
   }
 
   /**

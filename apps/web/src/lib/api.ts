@@ -839,3 +839,29 @@ export async function disconnectWorkspaceConnector(
     method: "DELETE",
   });
 }
+
+export type ApiMetaPage = {
+  id: string;
+  name: string;
+  has_instagram: boolean;
+};
+
+export async function listMetaPages(
+  workspaceId: string,
+): Promise<{
+  selected_page_id: string | null;
+  selected_page_name: string | null;
+  pages: ApiMetaPage[];
+}> {
+  return apiFetch(`/workspaces/${workspaceId}/connectors/meta/pages`);
+}
+
+export async function selectMetaPage(
+  workspaceId: string,
+  pageId: string,
+): Promise<ApiConnectorConnection> {
+  return apiFetch(`/workspaces/${workspaceId}/connectors/meta/pages/select`, {
+    method: "POST",
+    body: JSON.stringify({ page_id: pageId }),
+  });
+}

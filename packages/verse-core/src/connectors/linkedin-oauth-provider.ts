@@ -8,8 +8,20 @@ export type OAuthTokenBundle = {
   access_token: string;
   refresh_token?: string;
   expires_in?: number;
-  /** Non-secret hint for UI (e.g. member id). */
+  /** Non-secret hint for UI (e.g. member id / Page name). */
   external_account_hint?: string;
+  /** Meta Page publish target (never expose tokens on public DTOs). */
+  page_id?: string;
+  page_name?: string;
+  page_access_token?: string;
+  ig_user_id?: string;
+  /** Cached Page list from /me/accounts (tokens stay in vault only). */
+  meta_pages?: Array<{
+    id: string;
+    name: string;
+    access_token: string;
+    ig_user_id?: string;
+  }>;
 };
 
 export type OAuthProviderPort = {

@@ -35,9 +35,12 @@ Without LinkedIn / Meta credentials, stub mode is automatic for that network.
 ## Meta notes
 
 - One Meta app covers Facebook + Instagram connect buttons.
-- **Connect (MVP):** scope `public_profile` only — works with a Facebook Login use case in Development mode.
-- Page / Instagram publish scopes (`pages_*`, `instagram_*`, `business_management`) require adding those products in Meta and often App Review; they are not requested until live Graph publish ships.
-- Instagram content publishing later requires an **Instagram Business/Creator** account linked to a **Facebook Page**.
+- **Login** uses the personal admin account (e.g. Léon). **Live posts** target the selected **Facebook Page** (e.g. AlloTech72), not the personal wall.
+- In Meta App → Facebook Login → **Permissions**, click **+ Ajouter** for:
+  `pages_show_list`, `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`
+  (Development mode + app admin/tester is enough to test.)
+- After reconnect, choose the Page under **Page Facebook (cible des posts)** on `/connectors`.
+- Instagram content publishing later requires an **Instagram Business/Creator** account linked to that Page (media URL required by Graph).
 - Add the same redirect URI in the Meta app settings as on Railway.
 
 ## Invariants
