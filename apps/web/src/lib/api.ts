@@ -40,7 +40,13 @@ export type ApiRunStep = {
 
 export type OrgMembership = {
   role: string;
-  organization: { id: string; name: string; slug: string };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    deletedAt?: string | null;
+    deleted_at?: string | null;
+  };
 };
 
 export type Workspace = {
@@ -607,6 +613,82 @@ export async function listOrganizationQuotaAudit(
   organizationId: string,
 ): Promise<{ entries: ApiQuotaAuditEntry[] }> {
   return apiFetch(`/organizations/${organizationId}/quotas/audit`);
+}
+
+export type ApiExportJob = {
+  id: string;
+  organization_id: string | null;
+  user_id: string;
+  scope: "user" | "organization";
+  status: string;
+  expires_at: string;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type ApiAuditEvent = {
+  id: string;
+  organization_id: string | null;
+  actor_user_id: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export async function requestUserExport(): Promise<{
+  job: ApiExportJob;
+  payload: unknown;
+}> {
+  return apiFetch("/me/export", { method: "POST", body: "{}" });
+}
+
+export async function requestOrganizationExport(
+  organizationId: string,
+): Promise<{ job: ApiExportJob; payload: unknown }> {
+  return apiFetch(`/organizations/${organizationId}/export`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function softDeleteMe(): Promise<unknown> {
+  return apiFetch("/me/soft-delete", { method: "POST", body: "{}" });
+}
+
+export async function restoreMe(): Promise<unknown> {
+  return apiFetch("/me/restore", { method: "POST", body: "{}" });
+}
+
+export async function softDeleteOrganization(organizationId: string): Promise<unknown> {
+  return apiFetch(`/organizations/${organizationId}/soft-delete`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function restoreOrganization(organizationId: string): Promise<unknown> {
+  return apiFetch(`/organizations/${organizationId}/restore`, {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+export async function getOrganizationAuditEvents(
+  organizationId: string,
+): Promise<{ events: ApiAuditEvent[] }> {
+  return apiFetch(`/organizations/${organizationId}/audit-events`);
+}
+
+export async function putOrganizationRetention(
+  organizationId: string,
+  body: { soft_delete_grace_days?: number; audit_retention_days?: number },
+): Promise<{ soft_delete_grace_days: number; audit_retention_days: number }> {
+  return apiFetch(`/organizations/${organizationId}/retention`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 }
 
 export type ApiWorkflowDefinition = {

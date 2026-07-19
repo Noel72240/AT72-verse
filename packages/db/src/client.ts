@@ -51,6 +51,7 @@ export type {
   Run,
   RunStep,
 } from "@prisma/client";
+export { Prisma as PrismaNamespace } from "@prisma/client";
 export {
   OrgRole,
   WorkspaceRole,

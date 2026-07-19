@@ -43,6 +43,14 @@ model Organization {
   quotaTokensPerMonth     Int? @map("quota_tokens_per_month")
   quotaMaxAgentsInstalled Int? @map("quota_max_agents_installed")
   quotaApiRpm             Int? @map("quota_api_rpm")
+  /// Soft-delete tombstone (Phase 32 / EC2-A).
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  /// Hard purge eligible after this instant (grace window).
+  purgeAfter  DateTime? @map("purge_after") @db.Timestamptz(3)
+  /// Soft-delete grace days (EC8) — bounded 7–90, default 30.
+  softDeleteGraceDays Int @default(30) @map("soft_delete_grace_days")
+  /// Audit event retention days (EC8bis) — minimum 365.
+  auditRetentionDays  Int @default(365) @map("audit_retention_days")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -67,7 +75,10 @@ model Organization {
   connectorConnections ConnectorConnectionRow[]
   approvalRequests ApprovalRequestRow[]
   quotaAuditEntries QuotaAuditEntryRow[]
+  auditEvents      AuditEventRow[]
+  exportJobs       ExportJobRow[]
 
+  @@index([deletedAt])
   @@map("organizations")
 }
 
@@ -78,6 +89,10 @@ model User {
   /// IdP subject (Clerk). ADR-004.
   clerkUserId String?  @unique @map("clerk_user_id")
   avatarUrl   String?  @map("avatar_url")
+  /// Soft-delete tombstone (Phase 32 / EC2-A).
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  purgeAfter    DateTime? @map("purge_after") @db.Timestamptz(3)
+  anonymizedAt  DateTime? @map("anonymized_at") @db.Timestamptz(3)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -87,7 +102,10 @@ model User {
   conversations    Conversation[]    @relation("ConversationCreator")
   runsCreated      Run[]             @relation("RunCreator")
   memoryRecords    MemoryRecordRow[]
+  auditEvents      AuditEventRow[]   @relation("AuditActor")
+  exportJobs       ExportJobRow[]
 
+  @@index([deletedAt])
   @@map("users")
 }
 
@@ -673,4 +691,53 @@ model QuotaAuditEntryRow {
   @@index([organizationId])
   @@index([createdAt])
   @@map("quota_audit_entries")
+}
+
+/// Platform audit trail append-only (Phase 32 / EC4-A) — distinct from quota_audit_entries.
+model AuditEventRow {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  action         String
+  resourceType   String   @map("resource_type")
+  resourceId     String?  @map("resource_id")
+  /// Technical metadata only — no free-text user content (EA5bis).
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actor        User?         @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+/// GDPR export job (Phase 32 / EC6-A) — JSON payload stored when completed.
+model ExportJobRow {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String?   @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  /// user | organization
+  scope          String
+  /// pending | completed | failed | expired
+  status         String    @default("pending")
+  /// JSON export body when completed (MVP — no S3).
+  payload        Json?
+  error          String?
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(3)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("export_jobs")
 }

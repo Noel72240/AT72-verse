@@ -564,6 +564,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Incomplete delete (vectors/files) · charge légale |
 | **Critères de validation** | Checklist RGPD interne 100 % · delete vérifié PG+S3+vector |
 | **Complexité** | **L** |
+| **Statut** | **validée PO (2026-07-19)** — EC\* + EC6bis + EC8bis + EC10bis · **P33 = pack décisions dédié** |
 
 ---
 

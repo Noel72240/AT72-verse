@@ -22,6 +22,7 @@ import {
   type PrismaClient,
   updateOrgQuotas,
   utcMonthWindow,
+  appendAuditEvent,
 } from "@at72-verse/db";
 import { getMetrics } from "@at72-verse/observability";
 import { PRISMA } from "../auth/auth.tokens.js";
@@ -121,6 +122,19 @@ export class QuotasService {
       max_agents_installed: body.max_agents_installed,
       api_rpm: body.api_rpm,
       reason: body.reason,
+    }).then(async (result) => {
+      await appendAuditEvent(this.prisma, {
+        organization_id: organizationId,
+        actor_user_id: userId,
+        action: "quota.override",
+        resource_type: "organization",
+        resource_id: organizationId,
+        metadata: {
+          plan_id: result.limits.plan_id,
+          has_reason: Boolean(body.reason?.trim()),
+        },
+      });
+      return result;
     });
   }
 

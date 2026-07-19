@@ -23,6 +23,7 @@ import { ConnectorsModule } from "./connectors/connectors.module.js";
 import { ApprovalsModule } from "./approvals/approvals.module.js";
 import { ObservabilityModule } from "./observability/observability.module.js";
 import { QuotasModule } from "./quotas/quotas.module.js";
+import { PrivacyModule } from "./privacy/privacy.module.js";
 import { TenancyModule } from "./tenancy/tenancy.module.js";
 import { ClerkWebhookController } from "./webhooks/clerk-webhook.controller.js";
 
@@ -55,6 +56,7 @@ const platform = buildPlatformRuntime();
     ApprovalsModule,
     ObservabilityModule,
     QuotasModule,
+    PrivacyModule,
   ],
   controllers: [HealthController, AuthController, MeController, ClerkWebhookController],
   providers: [

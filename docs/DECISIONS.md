@@ -102,6 +102,7 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 29 HITL **validée PO** (+ DZ3bis · reprise idempotente) — ApprovalRequest · waiting_approval · ToolRuntime gate · inbox · claim unique · Kernel.tools stable · **P30 = pack dédié** | Accepted | 2026-07-19 |
 | — | Phase 30 observabilité **validée PO** (+ EA5bis · EA10bis &lt;5%) — `@at72-verse/observability` · Prometheus · OTLP optionnel · compose · debugger · **P31 = pack dédié** | Accepted | 2026-07-19 |
 | — | Phase 31 quotas **validée PO** (+ EB3bis · EB7bis) — plans numériques · quotas org · Redis RPM · audit overrides · `/quotas` · **P32 = pack dédié** | Accepted | 2026-07-19 |
+| — | Phase 32 soft delete / audit / export RGPD **validée PO** (+ EC6bis · EC8bis · EC10bis) — `audit_events` · exports · `/privacy` · 410 · **P33 = pack dédié** | Accepted | 2026-07-19 |
 | [ADR-013](./ADR/013-tenant-secrets-vault-oauth-connectors.md) | Tenant Secrets Vault + OAuth Connectors (LinkedIn · dual-mode · 28a/28b · OAuth API↔Core only) | **Accepted** | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |

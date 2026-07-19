@@ -72,7 +72,13 @@ export class OrganizationsService {
 
   async listForUser(userId: string) {
     const memberships = await this.prisma.membership.findMany({
-      where: { userId },
+      where: {
+        userId,
+        OR: [
+          { organization: { deletedAt: null } },
+          { role: "OWNER", organization: { deletedAt: { not: null } } },
+        ],
+      },
       include: { organization: true },
       orderBy: { createdAt: "asc" },
     });

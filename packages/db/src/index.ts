@@ -15,6 +15,7 @@ export {
   MessageRole,
 } from "./client.js";
 export type { PrismaClient, Prisma, User, Conversation, Message, Run, RunStep } from "./client.js";
+export { PrismaNamespace } from "./client.js";
 export {
   createOrganization,
   getOrganizationById,
@@ -80,5 +81,24 @@ export {
   updateOrgQuotas,
   utcMonthWindow,
 } from "./quotas.js";
+export {
+  appendAuditEvent,
+  anonymizeUser,
+  clampAuditRetentionDays,
+  clampSoftDeleteGraceDays,
+  createAndCompleteExportJob,
+  getExportJob,
+  hardPurgeOrganization,
+  hardPurgeUser,
+  listOrgAuditEvents,
+  notDeletedFilter,
+  purgeDueSoftDeletes,
+  purgeExpiredAuditEvents,
+  restoreOrganization,
+  restoreUser,
+  softDeleteOrganization,
+  softDeleteUser,
+  updateOrgRetention,
+} from "./privacy.js";
 
 export const packageName = "@at72-verse/db" as const;

@@ -105,6 +105,9 @@ export class MetricsRegistry {
   readonly kernelReject = new Counter("verse_kernel_reject_total", "Kernel FORBIDDEN/reject count");
   readonly quotaExceeded = new Counter("verse_quota_exceeded_total", "Quota exceeded events");
   readonly rateLimited = new Counter("verse_rate_limited_total", "API rate limit events");
+  readonly gdprExport = new Counter("verse_gdpr_export_total", "GDPR export jobs");
+  readonly softDelete = new Counter("verse_soft_delete_total", "Soft-delete events");
+  readonly purge = new Counter("verse_purge_total", "Hard purge events");
 
   renderPrometheus(): string {
     return [
@@ -117,6 +120,9 @@ export class MetricsRegistry {
       this.kernelReject.render(),
       this.quotaExceeded.render(),
       this.rateLimited.render(),
+      this.gdprExport.render(),
+      this.softDelete.render(),
+      this.purge.render(),
       "",
     ].join("\n");
   }

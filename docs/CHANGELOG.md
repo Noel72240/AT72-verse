@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 32 — Soft delete / audit / export RGPD** — **validée PO (2026-07-19)** (`docs/phase-32-decisions.md` · `docs/phase-32-validation.md`) · **Phase 33 = pack décisions dédié** (pas d’auto)
+  - Pack EC\* Accepted (+ **EC6bis** org export métadonnées only · **EC8bis** audit retention ≥365 configurable · **EC10bis** soft-delete → 410)
+  - Contracts `0.1.24` : audit / export / retention constants
+  - Prisma soft-delete User/Org · `audit_events` · `export_jobs`
+  - API privacy · RBAC 410 · AuthGuard soft-delete · Web `/privacy`
+  - **Hors scope 32 :** P33 pentest · Stripe
 - **Phase 31 — Quotas / plans / rate limits** — **validée PO (2026-07-19)** (`docs/phase-31-decisions.md` · `docs/phase-31-validation.md`) · **Phase 32 = pack décisions dédié** (pas d’auto)
   - Pack EB\* Accepted (+ **EB3bis** : limites numériques only · **EB7bis** : audit actor/prev/new/ts/reason)
   - Contracts `0.1.23` : `PLAN_QUOTA_DEFAULTS` · `OrgQuotaLimits` · `QuotaAuditEntryPublic`

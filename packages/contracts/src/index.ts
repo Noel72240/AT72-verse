@@ -204,6 +204,22 @@ export type {
 } from "./quotas/plan-quotas.js";
 export { PLAN_QUOTA_DEFAULTS } from "./quotas/plan-quotas.js";
 
+export type {
+  AuditAction,
+  AuditEventPublic,
+  ExportScope,
+  ExportJobStatus,
+  ExportJobPublic,
+} from "./privacy/gdpr.js";
+export {
+  SOFT_DELETE_GRACE_DAYS_DEFAULT,
+  SOFT_DELETE_GRACE_DAYS_MIN,
+  SOFT_DELETE_GRACE_DAYS_MAX,
+  AUDIT_RETENTION_DAYS_DEFAULT,
+  AUDIT_RETENTION_DAYS_MIN,
+  EXPORT_ARTIFACT_TTL_HOURS,
+} from "./privacy/gdpr.js";
+
 export {
   CONTRACT_EXAMPLE_FILES,
   CONTRACT_SCHEMA_FILES,
@@ -218,5 +234,5 @@ export {
   type JsonSchemaValidationResult,
 } from "./validation/validate-json-schema.js";
 
-/** Contracts package semver — freeze v0 (+ Quotas Phase 31). */
-export const CONTRACTS_VERSION = "0.1.23" as const;
+/** Contracts package semver — freeze v0 (+ Privacy Phase 32). */
+export const CONTRACTS_VERSION = "0.1.24" as const;

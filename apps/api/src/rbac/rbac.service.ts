@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  GoneException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import type { OrgRole, PrismaClient, WorkspaceRole } from "@at72-verse/db";
 import { PRISMA } from "../auth/auth.tokens.js";
 import { orgRoleAtLeast, workspaceRoleAtLeast } from "./role-hierarchy.js";
@@ -23,7 +29,24 @@ export class RbacService {
     userId: string,
     organizationId: string,
     minimum: OrgRole,
+    options?: { allowDeleted?: boolean },
   ): Promise<{ role: OrgRole }> {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { id: true, deletedAt: true },
+    });
+    if (!org) {
+      throw new NotFoundException({
+        code: "not_found",
+        message: "Organization not found",
+      });
+    }
+    if (org.deletedAt && !options?.allowDeleted) {
+      throw new GoneException({
+        code: "gone",
+        message: "Organization has been soft-deleted",
+      });
+    }
     const membership = await this.getOrgMembership(userId, organizationId);
     if (!membership) {
       throw new ForbiddenException({
@@ -65,6 +88,16 @@ export class RbacService {
       throw new NotFoundException({
         code: "not_found",
         message: "Workspace not found",
+      });
+    }
+    const org = await this.prisma.organization.findUnique({
+      where: { id: membership.organizationId },
+      select: { deletedAt: true },
+    });
+    if (org?.deletedAt) {
+      throw new GoneException({
+        code: "gone",
+        message: "Organization has been soft-deleted",
       });
     }
     if (!workspaceRoleAtLeast(membership.role, minimum)) {

@@ -1,9 +1,15 @@
-import { Injectable, UnauthorizedException, Inject } from "@nestjs/common";
+import { Injectable, UnauthorizedException, Inject, GoneException } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import type { AuthProvider } from "@at72-verse/auth";
 import type { PrismaClient } from "@at72-verse/db";
 import { ensureVerseUser } from "../identity/ensure-verse-user.js";
 import { AUTH_PROVIDER, PRISMA, type RequestWithAuth } from "./auth.tokens.js";
+
+function isRestorePath(method: string, url: string): boolean {
+  if (method !== "POST") return false;
+  const path = url.split("?")[0] ?? "";
+  return path.endsWith("/me/restore") || /\/organizations\/[^/]+\/restore$/.test(path);
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -25,6 +31,13 @@ export class AuthGuard implements CanActivate {
     }
 
     const user = await ensureVerseUser(this.prisma, session);
+    const reqAny = request as RequestWithAuth & { method?: string; url?: string; path?: string };
+    if (user.deletedAt && !isRestorePath(reqAny.method ?? "GET", reqAny.url ?? reqAny.path ?? "")) {
+      throw new GoneException({
+        code: "gone",
+        message: "User has been soft-deleted",
+      });
+    }
     request.verseAuth = { session, user };
     return true;
   }
