@@ -57,7 +57,71 @@ services:
       retries: 10
       start_period: 10s
 
+  # Phase 30 — observability profile (EA2-A)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: at72-verse-otel-collector
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ../monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "${OTEL_COLLECTOR_HTTP_PORT:-4318}:4318"
+      - "${OTEL_COLLECTOR_GRPC_PORT:-4317}:4317"
+    depends_on:
+      - tempo
+      - prometheus
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: at72-verse-tempo
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ../monitoring/tempo.yaml:/etc/tempo.yaml:ro
+      - at72_verse_tempo_data:/var/tempo
+    ports:
+      - "${TEMPO_PORT:-3200}:3200"
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: at72-verse-prometheus
+    profiles: ["observability"]
+    restart: unless-stopped
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - at72_verse_prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: at72-verse-grafana
+    profiles: ["observability"]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - at72_verse_grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3002}:3000"
+    depends_on:
+      - prometheus
+      - tempo
+
 volumes:
   at72_verse_pg_data:
   at72_verse_redis_data:
   at72_verse_minio_data:
+  at72_verse_prometheus_data:
+  at72_verse_grafana_data:
+  at72_verse_tempo_data:

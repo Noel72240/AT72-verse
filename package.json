@@ -21,6 +21,7 @@
     "dev": "node ./scripts/dev.mjs",
     "docker:up": "docker compose --project-directory . -f infra/docker/docker-compose.yml up -d postgres redis",
     "docker:up:minio": "docker compose --project-directory . -f infra/docker/docker-compose.yml --profile minio up -d",
+    "docker:up:observability": "docker compose --project-directory . -f infra/docker/docker-compose.yml --profile observability up -d",
     "docker:ps": "docker compose --project-directory . -f infra/docker/docker-compose.yml ps",
     "docker:down": "docker compose --project-directory . -f infra/docker/docker-compose.yml down",
     "docker:down:volumes": "docker compose --project-directory . -f infra/docker/docker-compose.yml down -v",

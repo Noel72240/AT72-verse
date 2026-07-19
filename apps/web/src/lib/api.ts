@@ -21,7 +21,7 @@ export type ApiRun = {
   id: string;
   workspace_id: string;
   conversation_id: string | null;
-  status: "queued" | "running" | "completed" | "failed";
+  status: "queued" | "running" | "waiting_approval" | "completed" | "failed";
   error: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
 };

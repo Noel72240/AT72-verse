@@ -31,6 +31,7 @@
     "@at72-verse/bus": "workspace:*",
     "@at72-verse/contracts": "workspace:*",
     "@at72-verse/db": "workspace:*",
+    "@at72-verse/observability": "workspace:*",
     "@at72-verse/skill-analysis": "workspace:*",
     "@at72-verse/skill-automation-plan": "workspace:*",
     "@at72-verse/skill-crm-assist": "workspace:*",

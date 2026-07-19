@@ -536,6 +536,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Bruit de logs · PII dans spans |
 | **Critères de validation** | 1 incident simulé diagnostiqué &lt; 15 min via traces · redaction PII vérifiée |
 | **Complexité** | **L** |
+| **Statut** | **Validée PO (2026-07-19)** — OTel + EA5bis + EA10bis · **P31 = pack décisions dédié** (pas d’auto) |
 
 ---
 

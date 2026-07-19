@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 30 — Observabilité production-ready** — **validée PO (2026-07-19)** — **Phase 31 = pack décisions dédié** (pas d’auto)
+  - Pack EA\* Accepted (+ **EA5bis** : aucun texte libre user dans OTel/logs · **EA10bis** : overhead &lt; 5 %)
+  - `@at72-verse/observability` : redact · metrics Prometheus · tracing OTLP optionnel · kernel sink
+  - API `GET /metrics` · HTTP interceptor · run `trace_id` metadata · status metrics
+  - Runtime / API bootstrap `VERSE_OTEL_ENABLED` · DLQ enqueue counter
+  - Compose profile `observability` (collector · Tempo · Prometheus · Grafana) + dashboard MVP
+  - Timeline debugger : `trace_id` · `approval_id` · deep-link Grafana optionnel
+  - Runbook `docs/observability-runbook.md` · validation `docs/phase-30-validation.md`
+  - Tests redaction + overhead &lt; 5 %
+  - **Hors scope 30 :** P31 quotas · P32 RGPD · P33 pentest
 - **Phase 29 — HITL (Human-in-the-loop)** — **validée PO (2026-07-19)** — **Phase 30 = pack décisions dédié** (pas d’auto)
   - Pack DZ\* Accepted (+ **DZ3bis** : `require_approval=true` nouveaux WS only · **idempotence** : claim `approved→executed` unique)
   - Contracts `0.1.22` : `ApprovalRequestPublic` · `waiting_approval` · `require_approval` · `ApprovalResumePayload`

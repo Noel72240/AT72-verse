@@ -38,6 +38,7 @@ export function ChatApp() {
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [steps, setSteps] = useState<ApiRunStep[]>([]);
   const [runStatus, setRunStatus] = useState<string | null>(null);
+  const [runTraceId, setRunTraceId] = useState<string | null>(null);
   const [runCost, setRunCost] = useState<ApiRunCost | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,6 +137,11 @@ export function ChatApp() {
           ]);
           setSteps(freshSteps);
           setRunStatus(run.status);
+          const tid =
+            run.metadata && typeof run.metadata.trace_id === "string"
+              ? run.metadata.trace_id
+              : null;
+          if (tid) setRunTraceId(tid);
           await refreshCost();
           if (run.status === "completed" || run.status === "failed") {
             await loadMessages(cid);
@@ -195,6 +201,7 @@ export function ChatApp() {
       const userMsg = await createMessage(conversationId, text);
       setMessages((m) => [...m, userMsg]);
       setRunCost(null);
+      setRunTraceId(null);
       const { run, steps: initial } = await createRun({
         workspaceId,
         conversationId,
@@ -202,6 +209,11 @@ export function ChatApp() {
       });
       setSteps(initial);
       setRunStatus(run.status);
+      const tid =
+        run.metadata && typeof run.metadata.trace_id === "string"
+          ? run.metadata.trace_id
+          : null;
+      setRunTraceId(tid);
       await watchRun(run.id, conversationId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -332,7 +344,17 @@ export function ChatApp() {
             </button>
           </div>
         </section>
-        <TimelinePanel steps={steps} runStatus={runStatus} cost={runCost} />
+        <TimelinePanel
+          steps={steps}
+          runStatus={runStatus}
+          cost={runCost}
+          traceId={runTraceId}
+          grafanaTraceUrl={
+            runTraceId && process.env.NEXT_PUBLIC_GRAFANA_TRACE_URL
+              ? `${process.env.NEXT_PUBLIC_GRAFANA_TRACE_URL}${encodeURIComponent(runTraceId)}`
+              : null
+          }
+        />
       </div>
     </div>
   );

@@ -389,6 +389,9 @@ importers:
       '@at72-verse/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@at72-verse/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@at72-verse/skill-analysis':
         specifier: workspace:*
         version: link:../../skills/analysis
@@ -486,6 +489,9 @@ importers:
       '@at72-verse/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@at72-verse/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@at72-verse/verse-core':
         specifier: workspace:*
         version: link:../../packages/verse-core
@@ -727,13 +733,23 @@ importers:
         version: 5.9.3
 
   packages/observability:
+    dependencies:
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../verse-kernel
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

@@ -21,7 +21,7 @@ export { BusError, type BusErrorCode } from "./errors.js";
 export { createBus, createBusFromEnv, type CreateBusOptions } from "./create-bus.js";
 export { InMemoryBus } from "./in-memory-bus.js";
 export { RedisStreamsBus, type RedisStreamsBusOptions } from "./redis-streams-bus.js";
-export { publishToDlq } from "./dlq.js";
+export { publishToDlq, setDlqEnqueueHook, type DlqEnqueueHook } from "./dlq.js";
 export {
   TOPIC_DLQ,
   TOPIC_PREFIX_RUNS,

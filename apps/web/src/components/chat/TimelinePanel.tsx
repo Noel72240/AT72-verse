@@ -6,6 +6,12 @@ import { buildTimelineForest, deriveActiveAgent, type TimelineNode } from "@/lib
 
 function StepNode({ node, depth }: { node: TimelineNode; depth: number }) {
   const { step, children } = node;
+  const approvalId =
+    step.output && typeof step.output.approval_id === "string"
+      ? step.output.approval_id
+      : null;
+  const stepTrace =
+    step.output && typeof step.output.trace_id === "string" ? step.output.trace_id : null;
   return (
     <div className={`step ${step.status}`} style={{ marginLeft: depth * 8 }}>
       <div>
@@ -15,6 +21,16 @@ function StepNode({ node, depth }: { node: TimelineNode; depth: number }) {
       <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
         {step.agent_id ? `agent: ${step.agent_id}` : step.kind}
       </div>
+      {approvalId ? (
+        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+          approval: <code>{approvalId}</code>
+        </div>
+      ) : null}
+      {stepTrace ? (
+        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+          step trace: <code>{stepTrace}</code>
+        </div>
+      ) : null}
       {children.length > 0 ? (
         <div className="step-children">
           {children.map((c) => (
@@ -30,6 +46,8 @@ export function TimelinePanel({
   steps,
   runStatus,
   cost,
+  traceId,
+  grafanaTraceUrl,
 }: {
   steps: ApiRunStep[];
   runStatus?: string | null;
@@ -39,6 +57,9 @@ export function TimelinePanel({
     max_usd: number | null;
     max_tokens: number | null;
   } | null;
+  /** Phase 30 — from run.metadata.trace_id */
+  traceId?: string | null;
+  grafanaTraceUrl?: string | null;
 }) {
   const forest = useMemo(() => buildTimelineForest(steps), [steps]);
   const active = useMemo(() => deriveActiveAgent(steps), [steps]);
@@ -49,6 +70,27 @@ export function TimelinePanel({
       {runStatus ? (
         <div style={{ marginBottom: "0.5rem" }}>
           Run: <span className="status-pill">{runStatus}</span>
+        </div>
+      ) : null}
+      {traceId ? (
+        <div
+          style={{
+            marginBottom: "0.75rem",
+            fontSize: "0.8rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.45,
+            wordBreak: "break-all",
+          }}
+        >
+          trace_id: <code style={{ color: "var(--text)" }}>{traceId}</code>
+          {grafanaTraceUrl ? (
+            <>
+              <br />
+              <a href={grafanaTraceUrl} target="_blank" rel="noreferrer">
+                Open in Grafana
+              </a>
+            </>
+          ) : null}
         </div>
       ) : null}
       {cost ? (

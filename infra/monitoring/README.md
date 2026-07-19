@@ -1,5 +1,11 @@
 ﻿# infra/monitoring
 
-Infrastructure placeholders for monitoring.
+Phase 30 observability stack configs (OTel collector, Tempo, Prometheus, Grafana).
 
-> Placeholder — structure only. Implementation starts in development phases (see `docs/ROADMAP.md`).
+Start with:
+
+```bash
+pnpm docker:up:observability
+```
+
+See `docs/observability-runbook.md`.

@@ -8,6 +8,7 @@ import {
   type RunStatus,
 } from "@at72-verse/contracts";
 import type { PrismaClient, Prisma } from "@at72-verse/db";
+import { getMetrics } from "@at72-verse/observability";
 import { buildBudgetSnapshot } from "@at72-verse/verse-core";
 import { PRISMA } from "../auth/auth.tokens.js";
 import { BUS } from "../core/bus.tokens.js";
@@ -284,11 +285,25 @@ export class RunsService {
         grantsSnapshot,
         budgetSnapshot,
         packagesSnapshot,
+      }).then(async (traceId) => {
+        await this.prisma.run.update({
+          where: { id: run.id },
+          data: {
+            metadata: asJson({
+              ...((run.metadata as Record<string, unknown> | null) ?? {}),
+              target_agent: targetAgent,
+              budget_snapshot: budgetSnapshot,
+              trace_id: traceId,
+            }),
+          },
+        });
+        getMetrics().runStatus.inc({ status: "queued", from: "create" });
       });
     }
 
+    const refreshed = await this.prisma.run.findUniqueOrThrow({ where: { id: run.id } });
     return {
-      run: contractRun,
+      run: toContractRun(refreshed),
       steps: [contractStep],
     };
   }
@@ -460,6 +475,7 @@ export class RunsService {
       from,
       to,
     });
+    getMetrics().runStatus.inc({ status: to, from });
 
     return contractRun;
   }
@@ -621,6 +637,7 @@ export class RunsService {
           from: run.status,
           to: "failed",
         });
+        getMetrics().runStatus.inc({ status: "failed", from: run.status });
       }
       return;
     }
@@ -649,6 +666,7 @@ export class RunsService {
           to: "waiting_approval",
           approval_id: payload.approval_id ?? null,
         });
+        getMetrics().runStatus.inc({ status: "waiting_approval", from: run.status });
       }
       return;
     }
@@ -752,6 +770,10 @@ export class RunsService {
         to: "completed",
         result: payload.result ?? null,
         message: messagePayload,
+      });
+      getMetrics().runStatus.inc({
+        status: "completed",
+        from: run.status === "queued" ? "running" : run.status,
       });
     }
   }

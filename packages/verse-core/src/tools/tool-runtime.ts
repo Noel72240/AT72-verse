@@ -26,6 +26,21 @@ import { toolRequiresApproval } from "../permissions/permission-engine.js";
 import type { ApprovalStorePort } from "../approvals/approval-store-port.js";
 import { buildApprovalInputPreview } from "../approvals/approval-store-port.js";
 
+/** Optional metrics hook (Phase 30) — hosts may wire @at72-verse/observability. */
+export type ToolMetricsHook = {
+  recordExecute(input: {
+    tool_id: string;
+    duration_ms: number;
+    result: string;
+  }): void;
+};
+
+let toolMetricsHook: ToolMetricsHook | undefined;
+
+export function setToolMetricsHook(hook: ToolMetricsHook | undefined): void {
+  toolMetricsHook = hook;
+}
+
 /** Map oauth tools to connector provider (Phase 28b). */
 function oauthProviderForTool(toolId: string): ConnectorProviderId | null {
   if (toolId === "social-publish") return "linkedin";
@@ -155,7 +170,7 @@ export class ToolRuntime {
     let errorMsg: string | null = null;
     let outputSummary: string | null = null;
 
-    const finish = async (extra?: { output?: Record<string, unknown> }) => {
+    const finish = async (extra?: { output?: Record<string, unknown>; resultLabel?: string }) => {
       await this.audit.record({
         execution_id: executionId,
         organization_id: context.organization_id,
@@ -173,6 +188,22 @@ export class ToolRuntime {
         output_summary: outputSummary ?? (extra?.output ? summarize(extra.output) : null),
         created_at: new Date().toISOString(),
       });
+      if (toolMetricsHook) {
+        const result =
+          extra?.resultLabel ??
+          (status === "completed"
+            ? "completed"
+            : errorMsg === "WAITING_APPROVAL"
+              ? "WAITING_APPROVAL"
+              : errorMsg === "CONNECTOR_NOT_CONNECTED" || errorMsg?.includes("CONNECTOR_NOT_CONNECTED")
+                ? "CONNECTOR_NOT_CONNECTED"
+                : "failed");
+        toolMetricsHook.recordExecute({
+          tool_id: request.tool_id,
+          duration_ms: Date.now() - started,
+          result,
+        });
+      }
     };
 
     if (!this.host) {

@@ -81,7 +81,7 @@ export {
 } from "./memory/conversation-summarizer.js";
 export { MemoryGatewayAdapter } from "./memory/memory-gateway-adapter.js";
 export type { ToolHostPort } from "./tools/tool-host-port.js";
-export { ToolRuntime } from "./tools/tool-runtime.js";
+export { ToolRuntime, setToolMetricsHook, type ToolMetricsHook } from "./tools/tool-runtime.js";
 export type {
   ToolExecutionAuditPort,
   ToolExecutionAuditRecord,
