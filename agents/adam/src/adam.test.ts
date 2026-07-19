@@ -88,7 +88,7 @@ describe("agent-adam Phase 15/24", () => {
     assert.ok(plan.steps.some((s) => s.name === "aggregate_result"));
   });
 
-  it("handleTask delegates to Nova and pass-through result (stub Kernel)", async () => {
+  it("handleTask delegates analysis goals to Orion (stub Kernel)", async () => {
     const kernel = createKernelClient({
       context: {
         run_id: "11111111-1111-4111-8111-111111111111",
@@ -103,11 +103,11 @@ describe("agent-adam Phase 15/24", () => {
 
     const out = await handleTask({
       kernel,
-      message: messageWithGoal("Rédige un post LinkedIn sur AT72 Verse"),
+      message: messageWithGoal("Analyse les métriques de vente du trimestre"),
     });
-    assert.ok(out.plan.steps.some((s) => s.name === "delegate_nova"));
+    assert.ok(out.plan.steps.some((s) => s.name === "delegate_orion"));
     assert.equal(out.result?.stub, true);
-    assert.equal(out.result?.target_agent, "nova");
+    assert.equal(out.result?.target_agent, "orion");
     assert.ok(out.resolved_persona);
     assert.equal(out.resolved_persona?.agent_id, "adam");
   });
