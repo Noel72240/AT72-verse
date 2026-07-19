@@ -5,7 +5,7 @@ import { getMetrics, initObservability } from "@at72-verse/observability";
 import { setToolMetricsHook } from "@at72-verse/verse-core";
 import { AppModule } from "./app.module.js";
 
-/** Nest API bootstrap — migrate via Docker entrypoint (no Railway startCommand). */
+/** Nest API bootstrap — migrate via /api-entrypoint.sh on Railway. */
 async function bootstrap(): Promise<void> {
   initObservability({ serviceName: "at72-verse-api" });
   const metrics = getMetrics();
