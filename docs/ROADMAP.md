@@ -522,6 +522,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Runs bloqués · UX lente |
 | **Critères de validation** | Publish social attend approve · reject annule sans side-effect · notification in-app |
 | **Complexité** | **L** |
+| **Statut** | **Validée PO (2026-07-19)** — HITL + DZ3bis + idempotence · **P30 = pack décisions dédié** (pas d’auto) |
 
 ---
 

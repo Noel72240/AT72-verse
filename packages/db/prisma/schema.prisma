@@ -58,6 +58,7 @@ model Organization {
   workflowRuns     WorkflowRunRow[]
   vaultSecrets     VaultSecretRow[]
   connectorConnections ConnectorConnectionRow[]
+  approvalRequests ApprovalRequestRow[]
 
   @@map("organizations")
 }
@@ -122,6 +123,7 @@ model Workspace {
   workflowRuns     WorkflowRunRow[]
   vaultSecrets     VaultSecretRow[]
   connectorConnections ConnectorConnectionRow[]
+  approvalRequests ApprovalRequestRow[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -175,6 +177,7 @@ model Invitation {
 enum RunStatus {
   queued
   running
+  waiting_approval
   completed
   failed
 }
@@ -182,6 +185,7 @@ enum RunStatus {
 enum RunStepStatus {
   queued
   running
+  waiting_approval
   completed
   failed
 }
@@ -256,6 +260,7 @@ model Run {
   memoryRecords MemoryRecordRow[]
   toolExecutions ToolExecution[]
   workflowRuns   WorkflowRunRow[]
+  approvalRequests ApprovalRequestRow[]
 
   @@index([organizationId])
   @@index([workspaceId])
@@ -436,15 +441,17 @@ model ToolExecution {
 
 /// Workspace capability enablement (Phase 20 / DN3).
 model CapabilityGrant {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  workspaceId    String   @map("workspace_id") @db.Uuid
+  id               String   @id @default(uuid()) @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
   /// agent | skill | tool
-  kind           String
-  capabilityId   String   @map("capability_id")
-  enabled        Boolean  @default(false)
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  kind             String
+  capabilityId     String   @map("capability_id")
+  enabled          Boolean  @default(false)
+  /// Phase 29 HITL — live side-effects need human approval when true (DZ3).
+  requireApproval  Boolean  @default(false) @map("require_approval")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -609,4 +616,36 @@ model ConnectorConnectionRow {
   @@index([workspaceId])
   @@index([provider])
   @@map("connector_connections")
+}
+
+/// HITL approval request (Phase 29). No secrets in rows.
+model ApprovalRequestRow {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  workspaceId     String    @map("workspace_id") @db.Uuid
+  runId           String    @map("run_id") @db.Uuid
+  stepId          String?   @map("step_id") @db.Uuid
+  toolId          String    @map("tool_id")
+  agentId         String    @map("agent_id")
+  status          String    @default("pending")
+  /// Full tool input for resume (no oauth tokens).
+  inputSnapshot   Json      @map("input_snapshot")
+  inputPreview    Json      @map("input_preview")
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(3)
+  decidedByUserId String?   @map("decided_by_user_id") @db.Uuid
+  decidedAt       DateTime? @map("decided_at") @db.Timestamptz(3)
+  executedAt      DateTime? @map("executed_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  run          Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([workspaceId])
+  @@index([runId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("approval_requests")
 }

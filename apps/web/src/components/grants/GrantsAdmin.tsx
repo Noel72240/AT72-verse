@@ -101,6 +101,25 @@ export function GrantsAdmin() {
         kind: grant.kind,
         capability_id: grant.capability_id,
         enabled: !grant.enabled,
+        require_approval: grant.require_approval,
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
+
+  async function toggleApproval(grant: ApiPermissionGrant) {
+    if (!workspaceId || grant.kind !== "tool") return;
+    setBusy(true);
+    setError(null);
+    try {
+      await setWorkspaceGrant(workspaceId, {
+        kind: grant.kind,
+        capability_id: grant.capability_id,
+        enabled: grant.enabled,
+        require_approval: !grant.require_approval,
       });
       await load();
     } catch (e) {
@@ -137,6 +156,9 @@ export function GrantsAdmin() {
         <a href="/connectors" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Connectors
         </a>
+        <a href="/approvals" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          Approvals
+        </a>
         <a href="/packages" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Packages
         </a>
@@ -146,8 +168,9 @@ export function GrantsAdmin() {
         Capability grants
       </h1>
       <p style={{ color: "var(--text-muted)", margin: "0 0 1.5rem", lineHeight: 1.5 }}>
-        Active ou désactive Agents, Skills et Tools pour ce workspace. Les ACL fines viendront
-        plus tard. Indépendant du RBAC utilisateur.
+        Active ou désactive Agents, Skills et Tools pour ce workspace. Sur les tools à
+        side-effect, active aussi <code>require_approval</code> (HITL Phase 29) — les
+        workspaces existants restent à false jusqu&apos;à activation explicite.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
@@ -225,22 +248,43 @@ export function GrantsAdmin() {
               </div>
               <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{g.kind}</div>
             </div>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void toggle(g)}
-              aria-pressed={g.enabled}
-              style={{
-                minWidth: "6.5rem",
-                padding: "0.4rem 0.75rem",
-                border: "1px solid var(--border, #444)",
-                background: g.enabled ? "var(--accent)" : "transparent",
-                color: g.enabled ? "#fff" : "var(--text-muted)",
-                cursor: "pointer",
-              }}
-            >
-              {g.enabled ? "Enabled" : "Disabled"}
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+              {g.kind === "tool" ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void toggleApproval(g)}
+                  aria-pressed={g.require_approval}
+                  title="Require human approval for live side-effects"
+                  style={{
+                    minWidth: "7.5rem",
+                    padding: "0.4rem 0.75rem",
+                    border: "1px solid var(--border, #444)",
+                    background: g.require_approval ? "var(--accent)" : "transparent",
+                    color: g.require_approval ? "#fff" : "var(--text-muted)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {g.require_approval ? "HITL on" : "HITL off"}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void toggle(g)}
+                aria-pressed={g.enabled}
+                style={{
+                  minWidth: "6.5rem",
+                  padding: "0.4rem 0.75rem",
+                  border: "1px solid var(--border, #444)",
+                  background: g.enabled ? "var(--accent)" : "transparent",
+                  color: g.enabled ? "#fff" : "var(--text-muted)",
+                  cursor: "pointer",
+                }}
+              >
+                {g.enabled ? "Enabled" : "Disabled"}
+              </button>
+            </div>
           </li>
         ))}
       </ul>

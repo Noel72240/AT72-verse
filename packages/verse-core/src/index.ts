@@ -100,8 +100,20 @@ export {
 export {
   PermissionEngine,
   buildCapabilityGrantSnapshot,
+  toolRequiresApproval,
 } from "./permissions/permission-engine.js";
 export type { CapabilityGrantPort, CapabilityGrantUpsert } from "./permissions/capability-grant-port.js";
+export type {
+  ApprovalStorePort,
+  ApprovalRequestRecord,
+  CreateApprovalInput,
+} from "./approvals/approval-store-port.js";
+export {
+  InMemoryApprovalStore,
+  toPublicApproval,
+  buildApprovalInputPreview,
+  DEFAULT_APPROVAL_TTL_MS,
+} from "./approvals/approval-store-port.js";
 export {
   CostEngine,
   buildBudgetSnapshot,

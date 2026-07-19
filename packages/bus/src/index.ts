@@ -34,6 +34,7 @@ export {
   runsTopic,
   agentTasksTopic,
   agentEventsTopic,
+  approvalsResumeTopic,
   systemTopic,
   auditTopic,
   metricsTopic,

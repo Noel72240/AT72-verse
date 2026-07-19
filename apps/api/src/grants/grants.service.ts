@@ -41,7 +41,12 @@ export class GrantsService {
   async setEnabled(
     workspaceId: string,
     userId: string,
-    input: { kind: string; capability_id: string; enabled: boolean },
+    input: {
+      kind: string;
+      capability_id: string;
+      enabled: boolean;
+      require_approval?: boolean;
+    },
   ): Promise<{ grant: PermissionGrant }> {
     const ws = await this.prisma.workspace.findUnique({ where: { id: workspaceId } });
     if (!ws) {
@@ -67,6 +72,9 @@ export class GrantsService {
       kind: input.kind as CapabilityKind,
       capability_id: input.capability_id.trim(),
       enabled: Boolean(input.enabled),
+      ...(input.require_approval !== undefined
+        ? { require_approval: Boolean(input.require_approval) }
+        : {}),
     });
     return { grant };
   }
@@ -85,6 +93,7 @@ export class GrantsService {
         kind: g.kind,
         capability_id: g.capability_id,
         enabled: g.enabled,
+        require_approval: g.require_approval,
       })),
     });
   }

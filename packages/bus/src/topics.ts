@@ -51,6 +51,11 @@ export function systemTopic(suffix: string): string {
   return `${TOPIC_PREFIX_SYSTEM}${suffix.replace(/^\.+/, "")}`;
 }
 
+/** Phase 29 — resume approved tool side-effect after HITL (`verse.system.approvals.resume`). */
+export function approvalsResumeTopic(): string {
+  return systemTopic("approvals.resume");
+}
+
 export function auditTopic(suffix: string): string {
   return `${TOPIC_PREFIX_AUDIT}${suffix.replace(/^\.+/, "")}`;
 }

@@ -4,12 +4,15 @@
  */
 import { createBusFromEnv } from "@at72-verse/bus";
 import {
+  createPrismaApprovalStore,
   createPrismaClient,
+  createPrismaConnectorStore,
   createPrismaMemoryStore,
+  createPrismaSecretsVaultCipherStore,
   createPrismaToolExecutionAudit,
   createPrismaVectorIndex,
 } from "@at72-verse/db";
-import { createVerseCore } from "@at72-verse/verse-core";
+import { createVerseCore, LocalEncryptedSecretsVault } from "@at72-verse/verse-core";
 import { startAgentRuntime } from "./runtime.js";
 
 const bus = createBusFromEnv();
@@ -21,7 +24,11 @@ if (process.env.DATABASE_URL) {
   core.setMemoryStore(createPrismaMemoryStore(prisma));
   core.setVectorIndex(createPrismaVectorIndex(prisma));
   core.setToolAudit(createPrismaToolExecutionAudit(prisma));
-  console.log("[agent-runtime] Memory + Tool audit + Vector: PostgreSQL");
+  const cipherStore = createPrismaSecretsVaultCipherStore(prisma);
+  core.setSecretsVault(new LocalEncryptedSecretsVault({ store: cipherStore }));
+  core.setConnectorStore(createPrismaConnectorStore(prisma));
+  core.setApprovalStore(createPrismaApprovalStore(prisma));
+  console.log("[agent-runtime] Memory + Tool audit + Vector + Vault/OAuth + HITL: PostgreSQL");
 } else {
   console.log("[agent-runtime] Memory/Tool audit: in-process (set DATABASE_URL for Postgres)");
 }
@@ -29,7 +36,7 @@ if (process.env.DATABASE_URL) {
 const handle = await startAgentRuntime({ bus, core, prisma });
 
 console.log(
-  `[agent-runtime] Core host ready; agents: ${handle.agents.join(", ")}; skills: ${handle.skills.join(", ")}; workflows: on`,
+  `[agent-runtime] Core host ready; agents: ${handle.agents.join(", ")}; skills: ${handle.skills.join(", ")}; workflows: on; approvals resume: on`,
 );
 
 const shutdown = async () => {

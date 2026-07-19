@@ -188,6 +188,12 @@ export type {
   ConnectorProviderId,
 } from "./connectors/connector-connection.js";
 
+export type {
+  ApprovalRequestPublic,
+  ApprovalResumePayload,
+  ApprovalStatus,
+} from "./approvals/approval-request.js";
+
 export {
   CONTRACT_EXAMPLE_FILES,
   CONTRACT_SCHEMA_FILES,
@@ -203,4 +209,4 @@ export {
 } from "./validation/validate-json-schema.js";
 
 /** Contracts package semver — freeze v0 (+ Workflows Phase 26). */
-export const CONTRACTS_VERSION = "0.1.21" as const;
+export const CONTRACTS_VERSION = "0.1.22" as const;

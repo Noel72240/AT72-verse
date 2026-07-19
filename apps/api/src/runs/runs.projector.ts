@@ -16,7 +16,20 @@ import { BUS } from "../core/bus.tokens.js";
 import { RunsService } from "./runs.service.js";
 
 /** Agents whose events are projected into Runs (extensible list). */
-const PROJECTED_AGENTS = ["adam", "nova", "orion", "astra", "pixel"] as const;
+const PROJECTED_AGENTS = [
+  "adam",
+  "nova",
+  "orion",
+  "astra",
+  "pixel",
+  "pulse",
+  "echo",
+  "nexus",
+  "vega",
+  "neo",
+  "kira",
+  "nyx",
+] as const;
 
 /**
  * AI3 / AO1 / AP3 / Phase 15 / 24 — consume task.delegated + task.consulted + task.completed.

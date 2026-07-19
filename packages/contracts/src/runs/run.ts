@@ -1,10 +1,10 @@
 import type { IsoDateTime, UlidOrUuid } from "../common/primitives.js";
 
-/** Run lifecycle states (Phase 11 / AD1). */
-export type RunStatus = "queued" | "running" | "completed" | "failed";
+/** Run lifecycle states (Phase 11 / AD1 · Phase 29 HITL). */
+export type RunStatus = "queued" | "running" | "waiting_approval" | "completed" | "failed";
 
-/** Step lifecycle — same four states as runs (Phase 11). */
-export type RunStepStatus = "queued" | "running" | "completed" | "failed";
+/** Step lifecycle — aligned with runs (Phase 11 · Phase 29). */
+export type RunStepStatus = "queued" | "running" | "waiting_approval" | "completed" | "failed";
 
 export type MessageRole = "user" | "assistant" | "system";
 
@@ -69,10 +69,11 @@ export type RunStep = {
   updated_at: IsoDateTime;
 };
 
-/** Allowed run status transitions (AD1). Terminal: completed, failed. */
+/** Allowed run status transitions (AD1 · Phase 29 HITL). Terminal: completed, failed. */
 export const RUN_STATUS_TRANSITIONS: Readonly<Record<RunStatus, readonly RunStatus[]>> = {
   queued: ["running", "failed"],
-  running: ["completed", "failed"],
+  running: ["waiting_approval", "completed", "failed"],
+  waiting_approval: ["running", "completed", "failed"],
   completed: [],
   failed: [],
 } as const;

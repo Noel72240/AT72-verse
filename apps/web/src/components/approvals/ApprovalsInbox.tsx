@@ -3,29 +3,28 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
+  approveRunApproval,
   createOrganization,
-  disconnectWorkspaceConnector,
-  getApiBase,
   getStoredOrgId,
   getStoredWorkspaceId,
   getToken,
   listOrganizations,
-  listWorkspaceConnectors,
+  listWorkspaceApprovals,
   listWorkspaces,
+  rejectRunApproval,
   setStoredOrgId,
   setStoredWorkspaceId,
-  startWorkspaceConnector,
-  type ApiConnectorConnection,
+  type ApiApprovalRequest,
   type OrgMembership,
   type Workspace,
 } from "@/lib/api";
 
-export function ConnectorsAdmin() {
+export function ApprovalsInbox() {
   const [orgs, setOrgs] = useState<OrgMembership[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [connections, setConnections] = useState<ApiConnectorConnection[]>([]);
+  const [approvals, setApprovals] = useState<ApiApprovalRequest[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -34,10 +33,6 @@ export function ConnectorsAdmin() {
     if (!getToken()) {
       window.location.href = "/login";
       return;
-    }
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("connected")) {
-      setNotice(`Connected: ${params.get("connected")} (${params.get("status") ?? "ok"})`);
     }
     void (async () => {
       try {
@@ -80,8 +75,8 @@ export function ConnectorsAdmin() {
     setBusy(true);
     setError(null);
     try {
-      const res = await listWorkspaceConnectors(workspaceId);
-      setConnections(res.connections);
+      const res = await listWorkspaceApprovals(workspaceId, "pending");
+      setApprovals(res.approvals);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
     } finally {
@@ -93,41 +88,33 @@ export function ConnectorsAdmin() {
     void load();
   }, [load]);
 
-  async function connectLinkedIn() {
-    if (!workspaceId) return;
+  async function onApprove(row: ApiApprovalRequest) {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
-      const res = await startWorkspaceConnector(workspaceId, "linkedin");
-      const url = new URL(res.authorize_url);
-      const state = url.searchParams.get("state");
-      if (url.searchParams.get("verse_stub") === "1" && state) {
-        window.location.href = `${getApiBase()}/connectors/oauth/callback?stub_code=dev-stub&state=${encodeURIComponent(state)}`;
-        return;
-      }
-      window.location.href = res.authorize_url;
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
-      setBusy(false);
-    }
-  }
-
-  async function disconnectLinkedIn() {
-    if (!workspaceId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await disconnectWorkspaceConnector(workspaceId, "linkedin");
-      setNotice("LinkedIn disconnected");
+      await approveRunApproval(row.run_id, row.id);
+      setNotice(`Approved ${row.tool_id}`);
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(false);
     }
   }
 
-  const linkedin = connections.find((c) => c.provider === "linkedin" && c.status === "connected");
+  async function onReject(row: ApiApprovalRequest) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await rejectRunApproval(row.run_id, row.id);
+      setNotice(`Rejected ${row.tool_id}`);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
 
   return (
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "0 1rem" }}>
@@ -135,27 +122,21 @@ export function ConnectorsAdmin() {
         <a href="/chat" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Chat
         </a>
-        <a href="/workflows" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Workflows
-        </a>
         <a href="/grants" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Grants
         </a>
-        <a href="/packages" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Packages
-        </a>
-        <a href="/connectors" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
+        <a href="/connectors" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Connectors
         </a>
-        <a href="/approvals" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+        <a href="/approvals" style={{ color: "var(--accent)", fontSize: "0.9rem" }}>
           Approvals
         </a>
       </nav>
 
-      <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Connectors</h1>
+      <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Approvals</h1>
       <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-        Phase 28a — OAuth LinkedIn connect / disconnect. Secrets stay in Core vault; publish live is
-        Phase 28b.
+        Phase 29 HITL — approve or reject live side-effects before they run. ADMIN / OWNER only for
+        decisions.
       </p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -191,53 +172,50 @@ export function ConnectorsAdmin() {
             ))}
           </select>
         </label>
+        <button type="button" disabled={busy || !workspaceId} onClick={() => void load()}>
+          {busy ? "…" : "Refresh"}
+        </button>
       </div>
 
-      {notice ? (
-        <p style={{ color: "var(--accent)", marginBottom: "1rem" }}>{notice}</p>
-      ) : null}
-      {error ? (
-        <p style={{ color: "var(--danger, #c44)", marginBottom: "1rem" }}>{error}</p>
-      ) : null}
+      {error ? <p style={{ color: "var(--danger, #c44)" }}>{error}</p> : null}
+      {notice ? <p style={{ color: "var(--accent)" }}>{notice}</p> : null}
 
-      <section
-        style={{
-          padding: "1rem 0",
-          borderTop: "1px solid var(--border, #333)",
-          borderBottom: "1px solid var(--border, #333)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "1rem",
-          }}
-        >
-          <div>
-            <div style={{ fontFamily: "var(--font-ibm-mono), monospace" }}>linkedin</div>
-            <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-              {linkedin
-                ? `Status: ${linkedin.status}${linkedin.external_account_hint ? ` · ${linkedin.external_account_hint}` : ""}`
-                : "Not connected"}
-            </div>
-          </div>
-          {linkedin ? (
-            <button type="button" disabled={busy} onClick={() => void disconnectLinkedIn()}>
-              Disconnect
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={busy || !workspaceId}
-              onClick={() => void connectLinkedIn()}
+      {approvals.length === 0 ? (
+        <p style={{ color: "var(--text-muted)" }}>No pending approvals.</p>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {approvals.map((a) => (
+            <li
+              key={a.id}
+              style={{
+                padding: "1rem 0",
+                borderBottom: "1px solid var(--border, #333)",
+              }}
             >
-              Connect
-            </button>
-          )}
-        </div>
-      </section>
+              <div style={{ fontFamily: "var(--font-ibm-mono), monospace", fontSize: "0.95rem" }}>
+                {a.tool_id} · {a.agent_id}
+              </div>
+              <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "0.35rem" }}>
+                {a.input_preview.platform ?? "—"} · {a.input_preview.mode ?? "—"}
+                {a.input_preview.content_preview
+                  ? ` · ${a.input_preview.content_preview}`
+                  : ""}
+              </div>
+              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "0.25rem" }}>
+                expires {a.expires_at}
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.75rem" }}>
+                <button type="button" disabled={busy} onClick={() => void onApprove(a)}>
+                  Approve
+                </button>
+                <button type="button" disabled={busy} onClick={() => void onReject(a)}>
+                  Reject
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

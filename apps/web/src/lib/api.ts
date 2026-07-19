@@ -413,6 +413,7 @@ export type ApiPermissionGrant = {
   kind: "agent" | "skill" | "tool";
   capability_id: string;
   enabled: boolean;
+  require_approval: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -425,11 +426,65 @@ export async function listWorkspaceGrants(
 
 export async function setWorkspaceGrant(
   workspaceId: string,
-  input: { kind: "agent" | "skill" | "tool"; capability_id: string; enabled: boolean },
+  input: {
+    kind: "agent" | "skill" | "tool";
+    capability_id: string;
+    enabled: boolean;
+    require_approval?: boolean;
+  },
 ): Promise<{ grant: ApiPermissionGrant }> {
   return apiFetch(`/workspaces/${workspaceId}/grants`, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+}
+
+export type ApiApprovalRequest = {
+  id: string;
+  organization_id: string;
+  workspace_id: string;
+  run_id: string;
+  step_id: string | null;
+  tool_id: string;
+  agent_id: string;
+  status: string;
+  input_preview: {
+    platform?: string;
+    mode?: string;
+    content_preview?: string;
+  };
+  expires_at: string;
+  decided_at: string | null;
+  executed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listWorkspaceApprovals(
+  workspaceId: string,
+  status?: string,
+): Promise<{ approvals: ApiApprovalRequest[] }> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/workspaces/${workspaceId}/approvals${q}`);
+}
+
+export async function approveRunApproval(
+  runId: string,
+  approvalId: string,
+): Promise<{ approval: ApiApprovalRequest }> {
+  return apiFetch(`/runs/${runId}/approve`, {
+    method: "POST",
+    body: JSON.stringify({ approval_id: approvalId }),
+  });
+}
+
+export async function rejectRunApproval(
+  runId: string,
+  approvalId: string,
+): Promise<{ approval: ApiApprovalRequest }> {
+  return apiFetch(`/runs/${runId}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ approval_id: approvalId }),
   });
 }
 

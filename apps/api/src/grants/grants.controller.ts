@@ -9,6 +9,7 @@ type SetBody = {
   kind?: string;
   capability_id?: string;
   enabled?: boolean;
+  require_approval?: boolean;
 };
 
 @Controller()
@@ -33,6 +34,9 @@ export class GrantsController {
       kind: body.kind ?? "",
       capability_id: body.capability_id ?? "",
       enabled: Boolean(body.enabled),
+      ...(body.require_approval !== undefined
+        ? { require_approval: Boolean(body.require_approval) }
+        : {}),
     });
   }
 }

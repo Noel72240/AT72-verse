@@ -9,7 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Phase 28b — social-publish live LinkedIn** — **validée PO (2026-07-19)** — lot 2/2 · Phase 28 clôturée · **P29 non démarrée**
+- **Phase 29 — HITL (Human-in-the-loop)** — **validée PO (2026-07-19)** — **Phase 30 = pack décisions dédié** (pas d’auto)
+  - Pack DZ\* Accepted (+ **DZ3bis** : `require_approval=true` nouveaux WS only · **idempotence** : claim `approved→executed` unique)
+  - Contracts `0.1.22` : `ApprovalRequestPublic` · `waiting_approval` · `require_approval` · `ApprovalResumePayload`
+  - KernelError `WAITING_APPROVAL` / `APPROVAL_ALREADY_CONSUMED`
+  - Prisma `approval_requests` · grant `require_approval` · enums run/step
+  - ToolRuntime gate avant OAuth live · resume claim avant side-effect
+  - API inbox · `POST /runs/:id/approve|reject` (ADMIN/OWNER) · bus `verse.system.approvals.resume`
+  - Web `/approvals` · toggle HITL sur Grants
+  - Timeout 24h · preview redacté · dry-run sans HITL · Kernel.tools signatures stables
+  - **Hors scope 29 :** nœud workflow HITL · Phase 30 obs
+- **Phase 28b — social-publish live LinkedIn** — **validée PO (2026-07-19)** — lot 2/2 · Phase 28 clôturée
   - DY1–DY9 Accepted (+ **DY2-B** : `CONNECTOR_NOT_CONNECTED` si live sans connexion)
   - Contracts `0.1.21` : `ToolExecuteContext.oauth` (injection Core only)
   - KernelError `CONNECTOR_NOT_CONNECTED`

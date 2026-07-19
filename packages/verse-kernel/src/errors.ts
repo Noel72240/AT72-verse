@@ -14,6 +14,8 @@ export type KernelErrorCode =
   | "AUTH"
   | "TIMEOUT"
   | "CONNECTOR_NOT_CONNECTED"
+  | "WAITING_APPROVAL"
+  | "APPROVAL_ALREADY_CONSUMED"
   | "INTERNAL";
 
 export class KernelError extends Error {

@@ -20,6 +20,7 @@ import { GrantsModule } from "./grants/grants.module.js";
 import { PackagesModule } from "./packages/packages.module.js";
 import { WorkflowsModule } from "./workflows/workflows.module.js";
 import { ConnectorsModule } from "./connectors/connectors.module.js";
+import { ApprovalsModule } from "./approvals/approvals.module.js";
 import { TenancyModule } from "./tenancy/tenancy.module.js";
 import { ClerkWebhookController } from "./webhooks/clerk-webhook.controller.js";
 
@@ -49,6 +50,7 @@ const platform = buildPlatformRuntime();
     PackagesModule,
     WorkflowsModule,
     ConnectorsModule,
+    ApprovalsModule,
   ],
   controllers: [HealthController, AuthController, MeController, ClerkWebhookController],
   providers: [

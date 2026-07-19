@@ -608,7 +608,7 @@ export class RunsService {
           output: asJson({ error: payload.error ?? "agent failed" }),
         },
       });
-      if (run.status === "queued" || run.status === "running") {
+      if (run.status === "queued" || run.status === "running" || run.status === "waiting_approval") {
         const updated = await this.prisma.run.update({
           where: { id: run.id },
           data: {
@@ -620,6 +620,34 @@ export class RunsService {
         await publishRunEvent(this.bus, "status_changed", toContractRun(updated), {
           from: run.status,
           to: "failed",
+        });
+      }
+      return;
+    }
+
+    if (payload.status === "waiting_approval") {
+      await this.prisma.runStep.update({
+        where: { id: parentStep.id },
+        data: {
+          status: "waiting_approval",
+          output: asJson({
+            approval_id: payload.approval_id ?? null,
+            trace_id: payload.trace_id,
+          }),
+        },
+      });
+      if (run.status === "queued" || run.status === "running") {
+        const updated = await this.prisma.run.update({
+          where: { id: run.id },
+          data: {
+            status: "waiting_approval",
+            startedAt: run.startedAt ?? new Date(),
+          },
+        });
+        await publishRunEvent(this.bus, "status_changed", toContractRun(updated), {
+          from: run.status,
+          to: "waiting_approval",
+          approval_id: payload.approval_id ?? null,
         });
       }
       return;
@@ -688,7 +716,10 @@ export class RunsService {
 
     // Root agent step completed successfully → finalize run + persist assistant message (CG1)
     const isRootStep = parentStep.parentStepId === null;
-    if (isRootStep && (run.status === "queued" || run.status === "running")) {
+    if (
+      isRootStep &&
+      (run.status === "queued" || run.status === "running" || run.status === "waiting_approval")
+    ) {
       const assistantText = extractAssistantContent(payload.result);
       let messagePayload: Record<string, unknown> | null = null;
 

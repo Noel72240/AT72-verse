@@ -71,6 +71,11 @@ export interface KernelContext {
    * Set on consult targets so ask cannot trigger nested orchestration.
    */
   orchestration_locked?: boolean;
+  /**
+   * Phase 29 HITL resume — stamped by Runtime after approve; agents never set this.
+   * ToolRuntime claims the approval (approved→executed) before any live side-effect.
+   */
+  resume_approval_id?: UlidOrUuid | null;
 }
 
 export interface LlmCompleteRequest {

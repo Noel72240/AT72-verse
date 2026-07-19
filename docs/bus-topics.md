@@ -36,6 +36,7 @@ Reserved now to avoid future breaking renames:
 | Prefix | Intended use |
 |--------|----------------|
 | `verse.system.*` | Platform / control-plane events |
+| `verse.system.approvals.resume` | Phase 29 — resume approved tool after HITL |
 | `verse.audit.*` | Audit trail |
 | `verse.metrics.*` | Metering / metrics signals |
 

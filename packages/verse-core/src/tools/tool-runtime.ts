@@ -22,6 +22,9 @@ import type { ToolExecutionAuditPort, ToolExecutionAuditStatus } from "./tool-au
 import type { ToolHostPort } from "./tool-host-port.js";
 import type { OAuthConnector } from "../connectors/oauth-connector.js";
 import type { ConnectorProviderId } from "@at72-verse/contracts";
+import { toolRequiresApproval } from "../permissions/permission-engine.js";
+import type { ApprovalStorePort } from "../approvals/approval-store-port.js";
+import { buildApprovalInputPreview } from "../approvals/approval-store-port.js";
 
 /** Map oauth tools to connector provider (Phase 28b). */
 function oauthProviderForTool(toolId: string): ConnectorProviderId | null {
@@ -64,6 +67,7 @@ export class ToolRuntime {
   private permissionEngine: PermissionEngine;
   private audit: ToolExecutionAuditPort;
   private oauthConnector: OAuthConnector | undefined;
+  private approvalStore: ApprovalStorePort | undefined;
 
   constructor(options: {
     host?: ToolHostPort;
@@ -71,6 +75,7 @@ export class ToolRuntime {
     permissionEngine?: PermissionEngine;
     audit?: ToolExecutionAuditPort;
     oauthConnector?: OAuthConnector;
+    approvalStore?: ApprovalStorePort;
   }) {
     this.host = options.host;
     this.personaEngine = options.personaEngine;
@@ -81,6 +86,7 @@ export class ToolRuntime {
       },
     };
     this.oauthConnector = options.oauthConnector;
+    this.approvalStore = options.approvalStore;
   }
 
   setHost(host: ToolHostPort | undefined): void {
@@ -101,6 +107,10 @@ export class ToolRuntime {
 
   setOAuthConnector(connector: OAuthConnector | undefined): void {
     this.oauthConnector = connector;
+  }
+
+  setApprovalStore(store: ApprovalStorePort | undefined): void {
+    this.approvalStore = store;
   }
 
   async listAvailable(context: KernelContext): Promise<string[]> {
@@ -243,6 +253,70 @@ export class ToolRuntime {
     let output: Record<string, unknown>;
     try {
       const wantsLive = request.input.mode === "live";
+      const resumeApprovalId = context.resume_approval_id ?? null;
+
+      // Phase 29 — single-flight claim before any OAuth / LinkedIn side-effect.
+      if (resumeApprovalId) {
+        if (!this.approvalStore) {
+          status = "failed";
+          errorMsg = "Approval store not configured for HITL resume";
+          await finish();
+          throw new KernelError("UNAVAILABLE", errorMsg, {
+            details: { approval_id: resumeApprovalId, tool_id: request.tool_id },
+          });
+        }
+        const claimed = await this.approvalStore.tryClaimExecution(resumeApprovalId);
+        if (!claimed) {
+          status = "failed";
+          errorMsg = "APPROVAL_ALREADY_CONSUMED";
+          await finish();
+          throw new KernelError(
+            "APPROVAL_ALREADY_CONSUMED",
+            "Approval already consumed or not executable",
+            {
+              details: {
+                approval_id: resumeApprovalId,
+                tool_id: request.tool_id,
+                code: "APPROVAL_ALREADY_CONSUMED",
+              },
+            },
+          );
+        }
+      } else if (
+        wantsLive &&
+        spec.side_effect &&
+        toolRequiresApproval(context.grants_snapshot, request.tool_id)
+      ) {
+        if (!this.approvalStore) {
+          status = "failed";
+          errorMsg = "Approval store not configured for HITL";
+          await finish();
+          throw new KernelError("UNAVAILABLE", errorMsg, {
+            details: { tool_id: request.tool_id },
+          });
+        }
+        const pending = await this.approvalStore.createPending({
+          organization_id: context.organization_id,
+          workspace_id: context.workspace_id,
+          run_id: context.run_id,
+          step_id: context.step_id ?? null,
+          tool_id: request.tool_id,
+          agent_id: context.agent_id,
+          input_snapshot: { ...request.input },
+          input_preview: buildApprovalInputPreview(request.input),
+        });
+        status = "failed";
+        errorMsg = "WAITING_APPROVAL";
+        await finish();
+        throw new KernelError("WAITING_APPROVAL", "Tool execution waiting for human approval", {
+          details: {
+            approval_id: pending.id,
+            tool_id: request.tool_id,
+            code: "WAITING_APPROVAL",
+          },
+        });
+      }
+
       let oauth: { provider: string; access_token: string } | undefined;
 
       if (wantsLive) {
@@ -308,6 +382,9 @@ export class ToolRuntime {
         request.tool_id,
       );
     } catch (err) {
+      if (err instanceof KernelError && err.code === "WAITING_APPROVAL") {
+        throw err;
+      }
       if (err instanceof KernelError && err.code === "TIMEOUT") {
         status = "timeout";
         errorMsg = err.message;

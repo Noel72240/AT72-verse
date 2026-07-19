@@ -57,10 +57,12 @@ export type AgentTaskCompletedPayload = {
   step_id?: UlidOrUuid;
   trace_id: UlidOrUuid;
   plan: AgentPlan;
-  status: "completed" | "failed";
+  status: "completed" | "failed" | "waiting_approval";
   error?: string;
   /** Optional agent result payload (e.g. skill output) — Phase 14 / BK1. */
   result?: Record<string, unknown>;
+  /** Phase 29 HITL — present when status is waiting_approval. */
+  approval_id?: UlidOrUuid;
   /** Persona actually used for this agent step (Phase 17 / DG1). */
   resolved_persona?: ResolvedPersona;
 };

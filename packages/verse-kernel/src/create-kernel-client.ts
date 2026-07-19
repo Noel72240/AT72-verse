@@ -41,6 +41,8 @@ export type CreateKernelContextInput = {
   packages_snapshot?: PackagesSnapshot | null;
   /** When true, block nested orchestration (Phase 24 / DR6 consult). */
   orchestration_locked?: boolean;
+  /** Phase 29 HITL resume — claim before live side-effect. */
+  resume_approval_id?: string | null;
 };
 
 /** Host-selected Kernel backend (Decision L2). Agents never set this. */
@@ -82,6 +84,7 @@ function resolveContext(input: CreateKernelContextInput): KernelContext {
     step_id: input.step_id ?? null,
     delegation_depth: input.delegation_depth ?? 0,
     ...(input.orchestration_locked ? { orchestration_locked: true } : {}),
+    ...(input.resume_approval_id ? { resume_approval_id: input.resume_approval_id } : {}),
   };
 }
 

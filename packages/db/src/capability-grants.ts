@@ -1,5 +1,5 @@
 /**
- * Workspace capability grants (Phase 20).
+ * Workspace capability grants (Phase 20 · Phase 29 HITL).
  */
 import type { CapabilityKind, PermissionGrant } from "@at72-verse/contracts";
 import { FIRST_PARTY_CAPABILITY_DEFAULTS } from "@at72-verse/contracts";
@@ -12,6 +12,7 @@ function toGrant(row: {
   kind: string;
   capabilityId: string;
   enabled: boolean;
+  requireApproval: boolean;
   createdAt: Date;
   updatedAt: Date;
 }): PermissionGrant {
@@ -22,6 +23,7 @@ function toGrant(row: {
     kind: row.kind as CapabilityKind,
     capability_id: row.capabilityId,
     enabled: row.enabled,
+    require_approval: row.requireApproval,
     created_at: row.createdAt.toISOString(),
     updated_at: row.updatedAt.toISOString(),
   };
@@ -50,6 +52,7 @@ export async function ensureFirstPartyCapabilityGrants(
           kind: seed.kind,
           capabilityId: seed.capability_id,
           enabled: seed.enabled,
+          requireApproval: seed.require_approval ?? false,
         },
       });
     }
@@ -77,6 +80,7 @@ export async function upsertCapabilityGrant(
     kind: CapabilityKind;
     capability_id: string;
     enabled: boolean;
+    require_approval?: boolean;
   },
 ): Promise<PermissionGrant> {
   const row = await prisma.capabilityGrant.upsert({
@@ -93,8 +97,14 @@ export async function upsertCapabilityGrant(
       kind: input.kind,
       capabilityId: input.capability_id,
       enabled: input.enabled,
+      requireApproval: input.require_approval ?? false,
     },
-    update: { enabled: input.enabled },
+    update: {
+      enabled: input.enabled,
+      ...(input.require_approval !== undefined
+        ? { requireApproval: input.require_approval }
+        : {}),
+    },
   });
   return toGrant(row);
 }

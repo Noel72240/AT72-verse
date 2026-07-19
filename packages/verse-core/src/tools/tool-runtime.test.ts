@@ -15,12 +15,20 @@ import { buildPackagesSnapshotFromSeeds } from "../registry/package-install-gate
 import { InMemoryToolExecutionAudit } from "./tool-audit-port.js";
 import type { ToolHostPort } from "./tool-host-port.js";
 import { ToolRuntime } from "./tool-runtime.js";
+import { InMemoryApprovalStore } from "../approvals/approval-store-port.js";
 
-function defaultGrants() {
+function defaultGrants(opts?: { socialRequireApproval?: boolean }) {
   return buildCapabilityGrantSnapshot({
     organization_id: "44444444-4444-4444-8444-444444444444",
     workspace_id: "55555555-5555-4555-8555-555555555555",
-    grants: [...FIRST_PARTY_CAPABILITY_DEFAULTS],
+    grants: FIRST_PARTY_CAPABILITY_DEFAULTS.map((g) =>
+      g.capability_id === "social-publish"
+        ? {
+            ...g,
+            require_approval: opts?.socialRequireApproval ?? false,
+          }
+        : { ...g },
+    ),
     captured_at: "2026-07-19T12:00:00.000Z",
   });
 }
@@ -69,6 +77,9 @@ function ctx(partial: Partial<KernelContext> = {}): KernelContext {
             captured_at: "2026-07-19T12:00:00.000Z",
           })
         : partial.packages_snapshot,
+    ...(partial.resume_approval_id
+      ? { resume_approval_id: partial.resume_approval_id }
+      : {}),
   };
 }
 
@@ -246,7 +257,7 @@ describe("ToolRuntime Phase 28b OAuth live", () => {
         async resolveAccessToken() {
           return "stub-access-live";
         },
-      } as import("../connectors/oauth-connector.js").OAuthConnector,
+      } as unknown as import("../connectors/oauth-connector.js").OAuthConnector,
     });
     const result = await runtime.execute(
       {
@@ -272,7 +283,7 @@ describe("ToolRuntime Phase 28b OAuth live", () => {
         async resolveAccessToken() {
           throw new Error("should not be called");
         },
-      } as import("../connectors/oauth-connector.js").OAuthConnector,
+      } as unknown as import("../connectors/oauth-connector.js").OAuthConnector,
     });
     const result = await runtime.execute(
       {
@@ -286,5 +297,156 @@ describe("ToolRuntime Phase 28b OAuth live", () => {
     );
     assert.equal(result.output.mode, "dry_run");
     assert.equal(capture.oauth, undefined);
+  });
+
+  it("live + require_approval creates pending and throws WAITING_APPROVAL (no oauth)", async () => {
+    const capture: { oauth?: unknown } = {};
+    const store = new InMemoryApprovalStore();
+    let oauthCalls = 0;
+    const runtime = new ToolRuntime({
+      host: socialHost(capture),
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+      approvalStore: store,
+      oauthConnector: {
+        async resolveAccessToken() {
+          oauthCalls += 1;
+          return "should-not-run";
+        },
+      } as unknown as import("../connectors/oauth-connector.js").OAuthConnector,
+    });
+    await assert.rejects(
+      () =>
+        runtime.execute(
+          {
+            tool_id: "social-publish",
+            input: { platform: "linkedin", content: "approve me", mode: "live" },
+          },
+          ctx({
+            agent_id: "pulse",
+            tools_allowlist: ["social-publish"],
+            grants_snapshot: defaultGrants({ socialRequireApproval: true }),
+          }),
+        ),
+      (err: unknown) =>
+        err instanceof KernelError &&
+        err.code === "WAITING_APPROVAL" &&
+        typeof err.details?.approval_id === "string",
+    );
+    assert.equal(oauthCalls, 0);
+    assert.equal(capture.oauth, undefined);
+    const pending = await store.listByWorkspace("55555555-5555-4555-8555-555555555555", {
+      status: "pending",
+    });
+    assert.equal(pending.length, 1);
+    assert.equal(pending[0]!.tool_id, "social-publish");
+  });
+
+  it("resume_approval_id claims once then executes live; second claim is APPROVAL_ALREADY_CONSUMED", async () => {
+    const capture: { oauth?: unknown; count: number } = { count: 0 };
+    const store = new InMemoryApprovalStore();
+    const pending = await store.createPending({
+      organization_id: "44444444-4444-4444-8444-444444444444",
+      workspace_id: "55555555-5555-4555-8555-555555555555",
+      run_id: "11111111-1111-4111-8111-111111111111",
+      step_id: "66666666-6666-4666-8666-666666666666",
+      tool_id: "social-publish",
+      agent_id: "pulse",
+      input_snapshot: { platform: "linkedin", content: "hi", mode: "live" },
+      input_preview: { platform: "linkedin", mode: "live", content_preview: "hi" },
+    });
+    const approved = await store.tryApprove(pending.id, "user-1");
+    assert.ok(approved);
+
+    const host: ToolHostPort = {
+      async resolve(id) {
+        if (id !== "social-publish") throw new KernelError("NOT_FOUND", id);
+        return { id, version: SOCIAL_SPEC.version, spec: SOCIAL_SPEC };
+      },
+      async execute(_id, c) {
+        capture.oauth = c.oauth;
+        capture.count += 1;
+        return {
+          mode: "live",
+          published: true,
+          platform: "linkedin",
+          external_post_id: "urn:li:share:once",
+          published_at: "2026-07-19T12:00:00.000Z",
+        };
+      },
+      async listRegistered() {
+        return ["social-publish"];
+      },
+    };
+
+    const runtime = new ToolRuntime({
+      host,
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+      approvalStore: store,
+      oauthConnector: {
+        async resolveAccessToken() {
+          return "stub-access-live";
+        },
+      } as unknown as import("../connectors/oauth-connector.js").OAuthConnector,
+    });
+
+    const result = await runtime.execute(
+      {
+        tool_id: "social-publish",
+        input: { platform: "linkedin", content: "hi", mode: "live" },
+      },
+      ctx({
+        agent_id: "pulse",
+        tools_allowlist: ["social-publish"],
+        grants_snapshot: defaultGrants({ socialRequireApproval: true }),
+        resume_approval_id: pending.id,
+      }),
+    );
+    assert.equal(result.output.published, true);
+    assert.equal(capture.count, 1);
+
+    await assert.rejects(
+      () =>
+        runtime.execute(
+          {
+            tool_id: "social-publish",
+            input: { platform: "linkedin", content: "hi", mode: "live" },
+          },
+          ctx({
+            agent_id: "pulse",
+            tools_allowlist: ["social-publish"],
+            grants_snapshot: defaultGrants({ socialRequireApproval: true }),
+            resume_approval_id: pending.id,
+          }),
+        ),
+      (err: unknown) =>
+        err instanceof KernelError && err.code === "APPROVAL_ALREADY_CONSUMED",
+    );
+    assert.equal(capture.count, 1);
+  });
+
+  it("dry-run never requires approval even when require_approval is set", async () => {
+    const store = new InMemoryApprovalStore();
+    const runtime = new ToolRuntime({
+      host: socialHost({}),
+      personaEngine: new PersonaEngine(),
+      audit: new InMemoryToolExecutionAudit(),
+      approvalStore: store,
+    });
+    const result = await runtime.execute(
+      {
+        tool_id: "social-publish",
+        input: { platform: "linkedin", content: "dry" },
+      },
+      ctx({
+        agent_id: "pulse",
+        tools_allowlist: ["social-publish"],
+        grants_snapshot: defaultGrants({ socialRequireApproval: true }),
+      }),
+    );
+    assert.equal(result.output.mode, "dry_run");
+    const pending = await store.listByWorkspace("55555555-5555-4555-8555-555555555555");
+    assert.equal(pending.length, 0);
   });
 });

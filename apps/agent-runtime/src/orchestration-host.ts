@@ -445,6 +445,25 @@ async function executeAgentInProcess(input: {
           result: outcome.result,
         };
       } catch (err) {
+        if (err instanceof KernelError && err.code === "WAITING_APPROVAL") {
+          const approvalId =
+            typeof err.details?.approval_id === "string" ? err.details.approval_id : undefined;
+          const waiting: AgentTaskCompletedPayload = {
+            agent_id: input.plugin.id,
+            run_id: input.request.run_id,
+            step_id: input.childStepId,
+            trace_id: input.request.trace_id,
+            plan: { version: "1", steps: [] },
+            status: "waiting_approval",
+            ...(approvalId ? { approval_id: approvalId } : {}),
+          };
+          await publishTaskCompleted(input.bus, input.plugin.id, message, waiting);
+          return {
+            step_id: input.childStepId,
+            status: "failed" as const,
+            error: "WAITING_APPROVAL",
+          };
+        }
         const error = err instanceof Error ? err.message : String(err);
         const failed: AgentTaskCompletedPayload = {
           agent_id: input.plugin.id,

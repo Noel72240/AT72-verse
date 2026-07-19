@@ -3,10 +3,15 @@ import type { Bus } from "@at72-verse/bus";
 import {
   agentEventsTopic,
   agentTasksTopic,
+  approvalsResumeTopic,
   type BusMessage,
   type BusUnsubscribe,
 } from "@at72-verse/bus";
-import type { AgentTaskCompletedPayload, AgentTaskPayload } from "@at72-verse/contracts";
+import type {
+  AgentTaskCompletedPayload,
+  AgentTaskPayload,
+  ApprovalResumePayload,
+} from "@at72-verse/contracts";
 import {
   createStampedPersonaOverridePort,
   createVerseCore,
@@ -45,6 +50,8 @@ export type StartRuntimeOptions = {
   prisma?: PrismaClient;
   /** Enable Phase 26 workflow bus consumer (default true). */
   enableWorkflows?: boolean;
+  /** Enable Phase 29 HITL approval resume consumer (default true). */
+  enableApprovalsResume?: boolean;
 };
 
 export type RuntimeHandle = {
@@ -92,6 +99,16 @@ export async function startAgentRuntime(options: StartRuntimeOptions): Promise<R
     unsubs.push(unsub);
   }
 
+  if (options.enableApprovalsResume !== false) {
+    const resumeUnsub = await options.bus.subscribe(
+      { topic: approvalsResumeTopic(), consumer_group: `${group}-approvals` },
+      async (message) => {
+        await executeApprovalResume(options.bus, core, registry, message);
+      },
+    );
+    unsubs.push(resumeUnsub);
+  }
+
   if (options.enableWorkflows !== false) {
     workflowRunner = await startWorkflowRunner({
       bus: options.bus,
@@ -116,6 +133,98 @@ export async function startAgentRuntime(options: StartRuntimeOptions): Promise<R
       }
     },
   };
+}
+
+/**
+ * Phase 29 — after HITL approve: claim + tool execute once (idempotent).
+ */
+async function executeApprovalResume(
+  bus: Bus,
+  core: VerseCore,
+  registry: AgentRegistry,
+  message: BusMessage,
+): Promise<void> {
+  const payload = message.payload as unknown as ApprovalResumePayload;
+  const approvalId = payload.approval_id;
+  const agentId = payload.agent_id;
+  const plugin = registry.get(agentId);
+  const traceId = payload.trace_id || message.correlation_id || randomUUID();
+
+  const publishOutcome = async (completed: AgentTaskCompletedPayload) => {
+    const envelope: BusMessage = {
+      event_id: randomUUID(),
+      correlation_id: traceId,
+      causation_id: message.event_id,
+      tenant_id: payload.organization_id,
+      workspace_id: payload.workspace_id,
+      run_id: payload.run_id,
+      timestamp: new Date().toISOString(),
+      version: "1",
+      event_type: "task.completed",
+      payload: { ...completed, trace_id: traceId, run_id: payload.run_id },
+    };
+    await bus.publish(envelope, {
+      topic: agentEventsTopic(agentId || "system"),
+    });
+  };
+
+  if (!approvalId || !payload.tool_id || !payload.run_id) {
+    return;
+  }
+
+  try {
+    const kernel = createKernelClient({
+      backend: "core",
+      coreFactory: (ctx) => core.createKernelClient(ctx),
+      context: {
+        run_id: payload.run_id,
+        agent_id: agentId || "system",
+        organization_id: payload.organization_id,
+        workspace_id: payload.workspace_id,
+        trace_id: traceId,
+        user_id: null,
+        tools_allowlist: payload.tools_allowlist ?? plugin?.tools_allowlist ?? [payload.tool_id],
+        grants_snapshot: payload.grants_snapshot ?? null,
+        packages_snapshot: payload.packages_snapshot ?? null,
+        step_id: payload.step_id ?? null,
+        resume_approval_id: approvalId,
+      },
+    });
+
+    const result = await kernel.tools.execute({
+      tool_id: payload.tool_id,
+      input: payload.input ?? {},
+    });
+
+    await publishOutcome({
+      agent_id: agentId || "system",
+      run_id: payload.run_id,
+      step_id: payload.step_id ?? undefined,
+      trace_id: traceId,
+      plan: { version: "1", steps: [] },
+      status: "completed",
+      result: result.output,
+    });
+  } catch (err) {
+    if (err instanceof KernelError && err.code === "APPROVAL_ALREADY_CONSUMED") {
+      // Idempotent loser — no second side-effect, no failed projection.
+      return;
+    }
+    await publishOutcome({
+      agent_id: agentId || "system",
+      run_id: payload.run_id,
+      step_id: payload.step_id ?? undefined,
+      trace_id: traceId,
+      plan: { version: "1", steps: [] },
+      status: "failed",
+      error:
+        err instanceof KernelError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : String(err),
+    });
+  }
 }
 
 async function executeAgentTask(
@@ -211,6 +320,21 @@ async function executeAgentTask(
     };
     await publishTaskCompleted(bus, plugin.id, message, completed, traceId);
   } catch (err) {
+    if (err instanceof KernelError && err.code === "WAITING_APPROVAL") {
+      const approvalId =
+        typeof err.details?.approval_id === "string" ? err.details.approval_id : undefined;
+      const waiting: AgentTaskCompletedPayload = {
+        agent_id: plugin.id,
+        run_id: runId,
+        step_id: payload.step_id,
+        trace_id: traceId,
+        plan: { version: "1", steps: [] },
+        status: "waiting_approval",
+        ...(approvalId ? { approval_id: approvalId } : {}),
+      };
+      await publishTaskCompleted(bus, plugin.id, message, waiting, traceId);
+      return;
+    }
     const failed: AgentTaskCompletedPayload = {
       agent_id: plugin.id,
       run_id: runId,

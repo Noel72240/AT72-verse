@@ -36,6 +36,8 @@ export type PermissionGrant = {
   kind: CapabilityKind;
   capability_id: string;
   enabled: boolean;
+  /** Phase 29 HITL — live side-effects require human approval when true. */
+  require_approval: boolean;
   created_at: IsoDateTime;
   updated_at: IsoDateTime;
 };
@@ -50,14 +52,17 @@ export type CapabilityGrantSnapshot = {
     kind: CapabilityKind;
     capability_id: string;
     enabled: boolean;
+    require_approval?: boolean;
   }>;
 };
 
-/** First-party default enablement (DN12). */
+/** First-party default enablement (DN12 · Phase 29 DZ3bis). */
 export const FIRST_PARTY_CAPABILITY_DEFAULTS: ReadonlyArray<{
   kind: CapabilityKind;
   capability_id: string;
   enabled: boolean;
+  /** Applied only when creating a missing grant row (new workspaces). */
+  require_approval?: boolean;
 }> = [
   { kind: "agent", capability_id: "adam", enabled: true },
   { kind: "agent", capability_id: "nova", enabled: true },
@@ -86,7 +91,8 @@ export const FIRST_PARTY_CAPABILITY_DEFAULTS: ReadonlyArray<{
   { kind: "tool", capability_id: "file-read-write", enabled: false },
   { kind: "tool", capability_id: "seo-audit", enabled: true },
   { kind: "tool", capability_id: "image-generate", enabled: false },
-  { kind: "tool", capability_id: "social-publish", enabled: true },
+  /** New workspaces only — existing rows keep require_approval=false (DZ3bis). */
+  { kind: "tool", capability_id: "social-publish", enabled: true, require_approval: true },
   { kind: "tool", capability_id: "gmb-sync", enabled: true },
   { kind: "tool", capability_id: "http-request", enabled: true },
   { kind: "tool", capability_id: "crm-sync", enabled: true },

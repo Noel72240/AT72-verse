@@ -26,6 +26,10 @@ import { LocalEncryptedSecretsVault } from "../vault/local-encrypted-secrets-vau
 import type { SecretsVaultPort } from "../vault/secrets-vault-port.js";
 import { InMemoryConnectorStore, type ConnectorStorePort } from "../connectors/connector-store-port.js";
 import { OAuthConnector } from "../connectors/oauth-connector.js";
+import {
+  InMemoryApprovalStore,
+  type ApprovalStorePort,
+} from "../approvals/approval-store-port.js";
 
 export const VERSE_CORE_VERSION = "0.0.0-phase08" as const;
 
@@ -53,6 +57,8 @@ export type VerseCoreOptions = {
   connectorStore?: ConnectorStorePort;
   /** Phase 28a — OAuthConnector (default constructed from vault+store). */
   oauthConnector?: OAuthConnector;
+  /** Phase 29 — HITL approval store. */
+  approvalStore?: ApprovalStorePort;
 };
 
 /**
@@ -73,6 +79,7 @@ export class VerseCore {
   private secretsVault: SecretsVaultPort;
   private connectorStore: ConnectorStorePort;
   private oauthConnector: OAuthConnector;
+  private approvalStore: ApprovalStorePort;
 
   constructor(options: VerseCoreOptions) {
     this.kernelBackend = options.kernelBackend ?? "stub";
@@ -92,6 +99,7 @@ export class VerseCore {
         vault: this.secretsVault,
         store: this.connectorStore,
       });
+    this.approvalStore = options.approvalStore ?? new InMemoryApprovalStore();
 
     const store = options.memoryStore ?? new InMemoryMemoryStore();
     const summarizer = options.memorySummarizer ?? new DeterministicConversationSummarizer();
@@ -117,6 +125,7 @@ export class VerseCore {
       permissionEngine: this.permissionEngine,
       audit: options.toolAudit,
       oauthConnector: this.oauthConnector,
+      approvalStore: this.approvalStore,
     });
 
     this.adapters = {
@@ -209,6 +218,15 @@ export class VerseCore {
   setOAuthConnector(connector: OAuthConnector): void {
     this.oauthConnector = connector;
     this.toolRuntime.setOAuthConnector(connector);
+  }
+
+  getApprovalStore(): ApprovalStorePort {
+    return this.approvalStore;
+  }
+
+  setApprovalStore(store: ApprovalStorePort): void {
+    this.approvalStore = store;
+    this.toolRuntime.setApprovalStore(store);
   }
 
   async health(): Promise<VerseCoreHealthReport> {

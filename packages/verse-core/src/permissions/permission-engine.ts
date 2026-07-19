@@ -14,10 +14,12 @@ function findGrant(
   snapshot: CapabilityGrantSnapshot | null | undefined,
   kind: CapabilityKind,
   capabilityId: string,
-): { enabled: boolean } | null {
+): { enabled: boolean; require_approval: boolean } | null {
   if (!snapshot) return null;
   const row = snapshot.grants.find((g) => g.kind === kind && g.capability_id === capabilityId);
-  return row ? { enabled: row.enabled } : null;
+  return row
+    ? { enabled: row.enabled, require_approval: Boolean(row.require_approval) }
+    : null;
 }
 
 function deny(reasons: AuthzDenialReason[], details?: Record<string, unknown>): AuthzDecision {
@@ -140,7 +142,12 @@ export class PermissionEngine {
 export function buildCapabilityGrantSnapshot(input: {
   organization_id: string;
   workspace_id: string;
-  grants: Array<{ kind: CapabilityKind; capability_id: string; enabled: boolean }>;
+  grants: Array<{
+    kind: CapabilityKind;
+    capability_id: string;
+    enabled: boolean;
+    require_approval?: boolean;
+  }>;
   captured_at?: string;
 }): CapabilityGrantSnapshot {
   const grants = [...input.grants]
@@ -148,6 +155,7 @@ export function buildCapabilityGrantSnapshot(input: {
       kind: g.kind,
       capability_id: g.capability_id,
       enabled: g.enabled,
+      require_approval: Boolean(g.require_approval),
     }))
     .sort((a, b) => {
       const k = a.kind.localeCompare(b.kind);
@@ -160,4 +168,13 @@ export function buildCapabilityGrantSnapshot(input: {
     captured_at: input.captured_at ?? new Date().toISOString(),
     grants,
   };
+}
+
+/** Phase 29 — HITL required for this tool when grant.require_approval is set. */
+export function toolRequiresApproval(
+  snapshot: CapabilityGrantSnapshot | null | undefined,
+  toolId: string,
+): boolean {
+  const grant = findGrant(snapshot, "tool", toolId);
+  return Boolean(grant?.require_approval);
 }

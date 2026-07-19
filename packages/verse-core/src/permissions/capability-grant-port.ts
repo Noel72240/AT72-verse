@@ -13,4 +13,5 @@ export type CapabilityGrantUpsert = {
   kind: CapabilityKind;
   capability_id: string;
   enabled: boolean;
+  require_approval?: boolean;
 };
