@@ -1,5 +1,4 @@
 # Railway — Nest API (monorepo)
-# Use Dockerfile CMD only — do not set startCommand (it was crashing the service).
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "infra/docker/Dockerfile.api"
@@ -7,3 +6,5 @@ dockerfilePath = "infra/docker/Dockerfile.api"
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
+# Runs inside the Docker image (migrate then Nest). Safe now that DATABASE_URL=Neon.
+startCommand = "/api-entrypoint.sh"
