@@ -17,7 +17,7 @@ import { VERSE_CORE } from "./core.tokens.js";
  * MVP deploy: run Adam (and siblings) inside the API process so a single Railway
  * service can execute chat runs. Disable with VERSE_EMBED_AGENT_RUNTIME=0 when a
  * dedicated agent-runtime service is deployed (ADR-001 / ADR-002 target).
- * Redeploy bump: race-safe child RunStep insert (run_id,seq).
+ * Redeploy bump: Adam direct chat replies for mode none.
  */
 @Injectable()
 export class AgentRuntimeHost implements OnModuleInit, OnModuleDestroy {

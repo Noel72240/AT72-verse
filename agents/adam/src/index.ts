@@ -159,10 +159,10 @@ function heuristicPlan(goal: string): AdamLlmPlan {
       summary: "Delegate analysis to Orion",
     };
   }
-  if (/linkedin|rédige|redige|write|post|article|blog|content|contenu|annonce/.test(g)) {
+  if (/linkedin|rédige|redige|write|post|poste|article|blog|content|contenu|annonce|réseau|reseau|social/.test(g)) {
     return { mode: "single", delegate_to: "nova", brief: goal, summary: "Delegate writing to Nova" };
   }
-  return { mode: "none", delegate_to: "none", summary: "No specialist delegation" };
+  return { mode: "none", delegate_to: "none", summary: "Direct conversational reply" };
 }
 
 function briefFor(
@@ -283,7 +283,26 @@ export async function handleTask(ctx: AdamHandleTaskContext): Promise<AdamHandle
     };
   }
 
-  return { plan, resolved_persona: resolved };
+  // mode "none" — answer the user directly in chat (no specialist).
+  const reply = await ctx.kernel.llm.complete({
+    profile: "fast-cheap",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Tu es Adam, orchestrateur d'AT72 Verse. Réponds à l'utilisateur de façon claire et utile, dans sa langue. Sois concis. Si une tâche complexe est demandée, propose comment tu peux aider.",
+      },
+      { role: "user", content: goal },
+    ],
+  });
+
+  return {
+    plan,
+    result: {
+      content: reply.content?.trim() || llmPlan.summary || "C'est noté.",
+    },
+    resolved_persona: resolved,
+  };
 }
 
 export const packageName = "@at72-verse/agent-adam" as const;

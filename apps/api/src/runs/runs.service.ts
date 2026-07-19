@@ -802,11 +802,23 @@ export class RunsService {
 
 function extractAssistantContent(result?: Record<string, unknown>): string | null {
   if (!result) return null;
-  if (typeof result.content === "string" && result.content.trim().length > 0) {
-    return result.content.trim();
+  const directKeys = ["content", "text", "message", "reply", "output"] as const;
+  for (const key of directKeys) {
+    const value = result[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  // Specialist aggregates: prefer first stringy nested content.
+  for (const value of Object.values(result)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const nested = extractAssistantContent(value as Record<string, unknown>);
+      if (nested) return nested;
+    }
   }
   try {
-    return JSON.stringify(result);
+    const asJson = JSON.stringify(result);
+    return asJson === "{}" ? null : asJson;
   } catch {
     return null;
   }
