@@ -1,5 +1,24 @@
 ﻿{
   "id": "kira",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Kira",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Support triage specialist — via skill.support-triage; may consult Neo.",
+  "kind": "specialist",
+  "default_persona": "persona.kira.default",
+  "skills": ["skill.support-triage"],
+  "tools_allowlist": [],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "can_consult": ["neo"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 10,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["support", "ticket", "faq", "triage", "aide"],
+    "priority": 50
+  }
 }

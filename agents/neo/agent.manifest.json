@@ -1,5 +1,24 @@
 ﻿{
   "id": "neo",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Neo",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Commercial / CRM specialist — via skill.crm-assist only.",
+  "kind": "specialist",
+  "default_persona": "persona.neo.default",
+  "skills": ["skill.crm-assist"],
+  "tools_allowlist": ["crm-sync"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "analytic-strict",
+  "can_consult": ["nova"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["crm", "lead", "pipeline", "offre", "commercial"],
+    "priority": 50
+  }
 }

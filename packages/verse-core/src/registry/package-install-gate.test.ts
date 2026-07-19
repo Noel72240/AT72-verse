@@ -21,7 +21,9 @@ describe("PackageInstallGate Phase 22", () => {
     assert.equal(isCapabilityInstalled(snap, "agent", "echo"), true);
     assert.equal(isCapabilityInstalled(snap, "agent", "nexus"), true);
     assert.equal(isCapabilityInstalled(snap, "agent", "vega"), true);
-    assert.equal(isCapabilityInstalled(snap, "agent", "kira"), false);
+    assert.equal(isCapabilityInstalled(snap, "agent", "neo"), true);
+    assert.equal(isCapabilityInstalled(snap, "agent", "kira"), true);
+    assert.equal(isCapabilityInstalled(snap, "agent", "nyx"), true);
   });
 
   it("refuses when nova excluded (uninstall)", () => {

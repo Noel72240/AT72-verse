@@ -6,8 +6,11 @@ import type { PersonaSpec } from "@at72-verse/contracts";
 import adamDefault from "./seeds/persona.adam.default.json" with { type: "json" };
 import astraDefault from "./seeds/persona.astra.default.json" with { type: "json" };
 import echoDefault from "./seeds/persona.echo.default.json" with { type: "json" };
+import kiraDefault from "./seeds/persona.kira.default.json" with { type: "json" };
+import neoDefault from "./seeds/persona.neo.default.json" with { type: "json" };
 import nexusDefault from "./seeds/persona.nexus.default.json" with { type: "json" };
 import novaDefault from "./seeds/persona.nova.default.json" with { type: "json" };
+import nyxDefault from "./seeds/persona.nyx.default.json" with { type: "json" };
 import orionDefault from "./seeds/persona.orion.default.json" with { type: "json" };
 import pixelDefault from "./seeds/persona.pixel.default.json" with { type: "json" };
 import pulseDefault from "./seeds/persona.pulse.default.json" with { type: "json" };
@@ -40,4 +43,7 @@ export const FIRST_PARTY_PERSONAS: ReadonlyMap<string, PersonaSpec> = new Map([
   [(echoDefault as PersonaSpec).id, echoDefault as PersonaSpec],
   [(nexusDefault as PersonaSpec).id, nexusDefault as PersonaSpec],
   [(vegaDefault as PersonaSpec).id, vegaDefault as PersonaSpec],
+  [(neoDefault as PersonaSpec).id, neoDefault as PersonaSpec],
+  [(kiraDefault as PersonaSpec).id, kiraDefault as PersonaSpec],
+  [(nyxDefault as PersonaSpec).id, nyxDefault as PersonaSpec],
 ]);

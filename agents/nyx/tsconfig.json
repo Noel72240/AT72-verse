@@ -1,9 +1,6 @@
 {
   "extends": "@at72-verse/config-tsconfig/library.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
-  },
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

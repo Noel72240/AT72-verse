@@ -59,6 +59,7 @@ Une phase est **Close** uniquement si :
 | **J14 — Fan-out / Consult** | 24 | Parallel campaign + Ask/Consult (**atteint à P24**) |
 | **J15 — Memory L4** | 25 | Org brand + embeddings (**atteint à P25**) |
 | **J16 — First workflow** | 26 | Workflow déclaratif content-campaign (**atteint à P26**) |
+| **J17 — Catalogue agents v1** | 27c | 12 agents catalogue (**atteint à P27c**) |
 
 ```
 P01 ──► P06     Foundations
@@ -482,12 +483,12 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Scope creep · intégrations réelles trop tôt |
 | **Critères de validation** | 12 agents listés/activables · 1 golden path chacun (même mocké) · registry coherent |
 | **Complexité** | **XL** |
-| **Statut** | **27a+27b validées (2026-07-19)** — Pulse+Echo · Nexus+Vega · **27c décisions à valider** · **J17 non atteint** |
+| **Statut** | **Validée (2026-07-19)** — 27a+27b+27c · **Jalon J17 atteint** · Catalogue agents v1 |
 
 > **Sous-phases recommandées :**  
 > **27a** Pulse+Echo (**L**) · **27b** Nexus+Vega (**L**) · **27c** Neo+Kira+Nyx (**L**)
 
-> **Jalon proposé (DU12) :** **J17 — Catalogue agents v1** à la clôture de 27c (sous réserve Accept PO).  
+> **Jalon (DU12) :** **J17 — Catalogue agents v1** — **atteint** à la validation PO de la livraison 27c.  
 > **Post-J16 applicable :** Engine = orchestrateur only · Agents = métier · Skills indépendantes du moteur · handlers pour nœuds futurs.
 
 ---

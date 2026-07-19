@@ -87,6 +87,9 @@ Formal ADRs live in `docs/ADR/`.
 | — | Phase 27b pack DV1–DV9 **soumis PO** (`docs/phase-27b-decisions.md`) — Nexus+Vega · http-request dry-run · watch-brief · **pas d’implémentation** · pas de 27c | Proposed | 2026-07-19 |
 | — | Phase 27b DV1–DV9 Accepted (+ Vega consult Orion · http-request dry-run grant · web-search défaut on · Nexus plan-only) · 27b en cours | **Accepted** | 2026-07-19 |
 | — | Phase **27b validée** (Nexus+Vega) ; dry-run déterministe · Registry unique · pas de logique métier Runtime/Core/Host · **J17 non atteint** · 27c pack à valider avant code | Accepted | 2026-07-19 |
+| — | Phase 27c pack DW1–DW9 **soumis PO** (`docs/phase-27c-decisions.md`) — Neo+Kira+Nyx · crm-sync/video-pipeline dry-run · storyboard · **J17 après validation livraison** · **pas d’implémentation** · pas de P28 auto | Proposed | 2026-07-19 |
+| — | Phase 27c DW1–DW9 Accepted (+ dry-run crm/video · Kira sans tool · golden Kira→Neo consult · video-brief/video-pipeline · J17 post-livraison) · 27c en cours | **Accepted** | 2026-07-19 |
+| — | Phase **27c validée** (Neo+Kira+Nyx) ; Catalogue agents v1 ; dry-run déterministe · Registry unique · pas de logique métier Runtime/Core/Host · **Jalon J17 atteint** · P28 pack à valider avant code | Accepted | 2026-07-19 |
 | [ADR-007](./ADR/007-vector-store-pgvector.md) | Vector store — pgvector MVP derrière MemoryStorePort / VectorIndexPort (Option A) ; Kernel indépendant du moteur | **Accepted** | 2026-07-19 |
 | ADR-008 | GraphQL for console | Proposed | — |
 | ADR-009 | Polyglot Python runtime | Proposed | — |

@@ -1,0 +1,10 @@
+{
+  "id": "skill.support-triage",
+  "version": "0.1.0",
+  "name": "Support Triage",
+  "description": "Reusable support triage via Kernel.llm.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["support", "triage"],
+  "eval_suite": "evals/support-triage-v0",
+  "permissions": ["skill.invoke:support-triage"]
+}

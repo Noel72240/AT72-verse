@@ -118,25 +118,51 @@ importers:
         version: 5.9.3
 
   agents/kira:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
 
   agents/neo:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -192,13 +218,26 @@ importers:
         version: 5.9.3
 
   agents/nyx:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -314,12 +353,21 @@ importers:
       '@at72-verse/agent-echo':
         specifier: workspace:*
         version: link:../../agents/echo
+      '@at72-verse/agent-kira':
+        specifier: workspace:*
+        version: link:../../agents/kira
+      '@at72-verse/agent-neo':
+        specifier: workspace:*
+        version: link:../../agents/neo
       '@at72-verse/agent-nexus':
         specifier: workspace:*
         version: link:../../agents/nexus
       '@at72-verse/agent-nova':
         specifier: workspace:*
         version: link:../../agents/nova
+      '@at72-verse/agent-nyx':
+        specifier: workspace:*
+        version: link:../../agents/nyx
       '@at72-verse/agent-orion':
         specifier: workspace:*
         version: link:../../agents/orion
@@ -347,6 +395,9 @@ importers:
       '@at72-verse/skill-automation-plan':
         specifier: workspace:*
         version: link:../../skills/automation-plan
+      '@at72-verse/skill-crm-assist':
+        specifier: workspace:*
+        version: link:../../skills/crm-assist
       '@at72-verse/skill-image-generation':
         specifier: workspace:*
         version: link:../../skills/image-generation
@@ -359,12 +410,21 @@ importers:
       '@at72-verse/skill-social-scheduling':
         specifier: workspace:*
         version: link:../../skills/social-scheduling
+      '@at72-verse/skill-support-triage':
+        specifier: workspace:*
+        version: link:../../skills/support-triage
+      '@at72-verse/skill-video-brief':
+        specifier: workspace:*
+        version: link:../../skills/video-brief
       '@at72-verse/skill-watch-brief':
         specifier: workspace:*
         version: link:../../skills/watch-brief
       '@at72-verse/skill-writing':
         specifier: workspace:*
         version: link:../../skills/writing
+      '@at72-verse/tool-crm-sync':
+        specifier: workspace:*
+        version: link:../../tools/crm-sync
       '@at72-verse/tool-file-read-write':
         specifier: workspace:*
         version: link:../../tools/file-read-write
@@ -383,6 +443,9 @@ importers:
       '@at72-verse/tool-social-publish':
         specifier: workspace:*
         version: link:../../tools/social-publish
+      '@at72-verse/tool-video-pipeline':
+        specifier: workspace:*
+        version: link:../../tools/video-pipeline
       '@at72-verse/tool-web-search':
         specifier: workspace:*
         version: link:../../tools/web-search
@@ -826,6 +889,31 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  skills/crm-assist:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
+    devDependencies:
+      '@at72-verse/config-tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
+      eslint:
+        specifier: ^9.18.0
+        version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   skills/image-generation:
     dependencies:
       '@at72-verse/contracts':
@@ -938,6 +1026,31 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  skills/support-triage:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
+    devDependencies:
+      '@at72-verse/config-tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
+      eslint:
+        specifier: ^9.18.0
+        version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   skills/translation:
     devDependencies:
       '@at72-verse/config-tsconfig':
@@ -946,6 +1059,31 @@ importers:
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  skills/video-brief:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@at72-verse/verse-kernel':
+        specifier: workspace:*
+        version: link:../../packages/verse-kernel
+    devDependencies:
+      '@at72-verse/config-tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
+      eslint:
+        specifier: ^9.18.0
+        version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -1025,13 +1163,23 @@ importers:
         version: 5.9.3
 
   tools/crm-sync:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
     devDependencies:
       '@at72-verse/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -1150,6 +1298,28 @@ importers:
         version: 5.9.3
 
   tools/social-publish:
+    dependencies:
+      '@at72-verse/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+    devDependencies:
+      '@at72-verse/config-tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/config-tsconfig
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.20.1
+      eslint:
+        specifier: ^9.18.0
+        version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  tools/video-pipeline:
     dependencies:
       '@at72-verse/contracts':
         specifier: workspace:*

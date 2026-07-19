@@ -14,8 +14,11 @@ import type {
 import { handleTask as adamHandleTask, ADAM_AGENT_ID } from "@at72-verse/agent-adam";
 import { handleTask as astraHandleTask, ASTRA_AGENT_ID } from "@at72-verse/agent-astra";
 import { handleTask as echoHandleTask, ECHO_AGENT_ID } from "@at72-verse/agent-echo";
+import { handleTask as kiraHandleTask, KIRA_AGENT_ID } from "@at72-verse/agent-kira";
+import { handleTask as neoHandleTask, NEO_AGENT_ID } from "@at72-verse/agent-neo";
 import { handleTask as nexusHandleTask, NEXUS_AGENT_ID } from "@at72-verse/agent-nexus";
 import { handleTask as novaHandleTask, NOVA_AGENT_ID } from "@at72-verse/agent-nova";
+import { handleTask as nyxHandleTask, NYX_AGENT_ID } from "@at72-verse/agent-nyx";
 import { handleTask as orionHandleTask, ORION_AGENT_ID } from "@at72-verse/agent-orion";
 import { handleTask as pixelHandleTask, PIXEL_AGENT_ID } from "@at72-verse/agent-pixel";
 import { handleTask as pulseHandleTask, PULSE_AGENT_ID } from "@at72-verse/agent-pulse";
@@ -30,6 +33,11 @@ import {
   execute as automationPlanExecute,
   SKILL_ID as AUTOMATION_PLAN_SKILL_ID,
 } from "@at72-verse/skill-automation-plan";
+import {
+  CRM_ASSIST_SKILL_SPEC,
+  execute as crmAssistExecute,
+  SKILL_ID as CRM_ASSIST_SKILL_ID,
+} from "@at72-verse/skill-crm-assist";
 import {
   execute as imageGenSkillExecute,
   IMAGE_GENERATION_SKILL_SPEC,
@@ -51,6 +59,16 @@ import {
   SOCIAL_SCHEDULING_SKILL_SPEC,
 } from "@at72-verse/skill-social-scheduling";
 import {
+  execute as supportTriageExecute,
+  SKILL_ID as SUPPORT_TRIAGE_SKILL_ID,
+  SUPPORT_TRIAGE_SKILL_SPEC,
+} from "@at72-verse/skill-support-triage";
+import {
+  execute as videoBriefExecute,
+  SKILL_ID as VIDEO_BRIEF_SKILL_ID,
+  VIDEO_BRIEF_SKILL_SPEC,
+} from "@at72-verse/skill-video-brief";
+import {
   execute as watchBriefExecute,
   SKILL_ID as WATCH_BRIEF_SKILL_ID,
   WATCH_BRIEF_SKILL_SPEC,
@@ -60,6 +78,11 @@ import {
   SKILL_ID as WRITING_SKILL_ID,
   WRITING_SKILL_SPEC,
 } from "@at72-verse/skill-writing";
+import {
+  CRM_SYNC_TOOL_SPEC,
+  execute as crmSyncExecute,
+  TOOL_ID as CRM_SYNC_TOOL_ID,
+} from "@at72-verse/tool-crm-sync";
 import {
   execute as fileRwExecute,
   TOOL_ID as FILE_RW_TOOL_ID,
@@ -90,6 +113,11 @@ import {
   SOCIAL_PUBLISH_TOOL_SPEC,
   TOOL_ID as SOCIAL_PUBLISH_TOOL_ID,
 } from "@at72-verse/tool-social-publish";
+import {
+  execute as videoPipelineExecute,
+  TOOL_ID as VIDEO_PIPELINE_TOOL_ID,
+  VIDEO_PIPELINE_TOOL_SPEC,
+} from "@at72-verse/tool-video-pipeline";
 import {
   execute as webSearchExecute,
   TOOL_ID as WEB_SEARCH_TOOL_ID,
@@ -216,6 +244,33 @@ export function createDefaultAgentRegistry(): AgentRegistry {
         handleTask: vegaHandleTask,
       },
     ],
+    [
+      NEO_AGENT_ID,
+      {
+        id: NEO_AGENT_ID,
+        tools_allowlist: ["crm-sync"],
+        can_consult: ["nova"],
+        handleTask: neoHandleTask,
+      },
+    ],
+    [
+      KIRA_AGENT_ID,
+      {
+        id: KIRA_AGENT_ID,
+        tools_allowlist: [],
+        can_consult: ["neo"],
+        handleTask: kiraHandleTask,
+      },
+    ],
+    [
+      NYX_AGENT_ID,
+      {
+        id: NYX_AGENT_ID,
+        tools_allowlist: ["video-pipeline"],
+        can_consult: ["nova", "pixel"],
+        handleTask: nyxHandleTask,
+      },
+    ],
   ]);
 }
 
@@ -293,6 +348,33 @@ export function createDefaultSkillRegistry(): SkillRegistry {
         execute: watchBriefExecute,
       },
     ],
+    [
+      CRM_ASSIST_SKILL_ID,
+      {
+        id: CRM_ASSIST_SKILL_ID,
+        version: CRM_ASSIST_SKILL_SPEC.version,
+        spec: CRM_ASSIST_SKILL_SPEC,
+        execute: crmAssistExecute,
+      },
+    ],
+    [
+      SUPPORT_TRIAGE_SKILL_ID,
+      {
+        id: SUPPORT_TRIAGE_SKILL_ID,
+        version: SUPPORT_TRIAGE_SKILL_SPEC.version,
+        spec: SUPPORT_TRIAGE_SKILL_SPEC,
+        execute: supportTriageExecute,
+      },
+    ],
+    [
+      VIDEO_BRIEF_SKILL_ID,
+      {
+        id: VIDEO_BRIEF_SKILL_ID,
+        version: VIDEO_BRIEF_SKILL_SPEC.version,
+        spec: VIDEO_BRIEF_SKILL_SPEC,
+        execute: videoBriefExecute,
+      },
+    ],
   ]);
 }
 
@@ -359,6 +441,24 @@ export function createDefaultToolRegistry(): ToolRegistry {
         version: HTTP_REQUEST_TOOL_SPEC.version,
         spec: HTTP_REQUEST_TOOL_SPEC,
         execute: httpRequestExecute,
+      },
+    ],
+    [
+      CRM_SYNC_TOOL_ID,
+      {
+        id: CRM_SYNC_TOOL_ID,
+        version: CRM_SYNC_TOOL_SPEC.version,
+        spec: CRM_SYNC_TOOL_SPEC,
+        execute: crmSyncExecute,
+      },
+    ],
+    [
+      VIDEO_PIPELINE_TOOL_ID,
+      {
+        id: VIDEO_PIPELINE_TOOL_ID,
+        version: VIDEO_PIPELINE_TOOL_SPEC.version,
+        spec: VIDEO_PIPELINE_TOOL_SPEC,
+        execute: videoPipelineExecute,
       },
     ],
   ]);

@@ -1,0 +1,10 @@
+{
+  "id": "skill.video-brief",
+  "version": "0.1.0",
+  "name": "Video Brief",
+  "description": "Reusable video script / storyboard via Kernel (no render).",
+  "default_model_profile": "creative-balanced",
+  "tags": ["video", "storyboard"],
+  "eval_suite": "evals/video-brief-v0",
+  "permissions": ["skill.invoke:video-brief"]
+}

@@ -9,7 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Phase 27b — Nexus + Vega** — **validée PO (2026-07-19)** — lot 2/3 vers J17 (**J17 non atteint**)
+- **Phase 27c — Neo + Kira + Nyx** — **validée PO (2026-07-19)** — lot 3/3 · **Jalon J17 atteint**
+  - DW1–DW9 Accepted (+ dry-run crm/video · Kira sans tool · golden Kira→Neo consult · video-brief/video-pipeline · creative-balanced existant)
+  - Contracts `0.1.19` : seeds Neo/Kira/Nyx · skills · `crm-sync` · `video-pipeline`
+  - Neo : crm-assist → crm-sync dry-run (`would_sync`)
+  - Kira : support-triage (LLM only) · `can_consult: ["neo"]` · golden `task.consulted`
+  - Nyx : video-brief → video-pipeline dry-run (`would_render: false`, storyboard)
+  - Runtime Agent Registry only · dry-run déterministe · zéro réseau · pas de workflow / Model Profile
+  - **Catalogue agents v1** : 12 agents first-party
+  - **Hors scope 27c :** P28 · translation · rendu vidéo
+- **Phase 27b — Nexus + Vega** — **validée PO (2026-07-19)** — lot 2/3 vers J17
   - DV1–DV9 Accepted (+ Vega consult Orion · http-request dry-run · web-search défaut on · Nexus plan-only)
   - Contracts `0.1.18` : seeds `pkg.nexus` / `pkg.vega` · `skill.automation-plan` · `skill.watch-brief` · `http-request`
   - Nexus : Persona → automation-plan → http-request dry-run (`would_request`, `executes: false`)
@@ -17,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Runtime Agent Registry only · pas de logique métier Runtime/Core/Host · zéro réseau réel · dry-run déterministe
   - Tests golden Nexus + Vega · Runtime/Core OK
   - **Hors scope 27b :** 27c · OAuth live · workflows · exécution d’automations
-- **Phase 27a — Pulse + Echo** — **validée PO (2026-07-19)** — lot 1/3 vers J17 (**J17 non atteint**)
+- **Phase 27a — Pulse + Echo** — **validée PO (2026-07-19)** — lot 1/3 vers J17
   - DU1–DU13 Accepted (+ dry-run only · translation différée · Persona→Skills→Kernel→Tools)
   - Contracts `0.1.17` : seeds `pkg.pulse` / `pkg.echo` · skills · tools · grants
   - Skills `skill.social-scheduling` · `skill.local-presence`
@@ -25,8 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Agents Pulse/Echo + personas · Runtime Agent Registry only (pas de logique métier Runtime/Core/Host)
   - Tests golden Pulse (`would_publish`) + Echo (`would_sync`) · Runtime/Core OK
   - Contraintes : pas de live externe en P27 · archi Persona→Skills→Kernel→Tools · Registry = point unique d’enregistrement
-  - **Hors scope 27a :** 27b/27c · OAuth live · nouveaux workflows · translation · J17
-- **Phase 26 — Premier workflow déclaratif** — **validée PO (2026-07-19)** — **Jalon J16 atteint**
+  - **Hors scope 27a :** 27b/27c · OAuth live · nouveaux workflows · translation · J17 (atteint à 27c)- **Phase 26 — Premier workflow déclaratif** — **validée PO (2026-07-19)** — **Jalon J16 atteint**
   - DT1–DT12 Accepted (+ amendement DT6 : checkpoints · resume manuel · `paused`/`waiting_checkpoint` · **pas** de retry auto · Engine sans logique métier · handlers extensibles) · `docs/workflows.md`
   - Contracts `0.1.16` : `WorkflowDefinition` / `WorkflowStepSpec` · statuses `waiting_checkpoint`/`paused` · seed `pkg.workflow.content-campaign`
   - Core : `WorkflowEngine` + `registerHandler` · kinds `memory_remember` · `fan_out` · `delegate` · `checkpoint` · `noop`

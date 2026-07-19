@@ -1571,4 +1571,183 @@ describe("agent-runtime Phase 12/14/15", () => {
     assert.ok(Array.isArray(result?.signals));
     await runtime.stop();
   });
+
+  it("Neo completes CRM assist golden path with dry-run (Phase 27c)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-neo",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111180";
+    const traceId = "55555555-5555-4555-8555-555555555630";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-neo",
+          trace_id: traceId,
+          goal: "Qualifier le lead entreprise X et preparer le suivi CRM",
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("neo") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("neo"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as {
+      content?: string;
+      dry_run?: { mode?: string; would_sync?: boolean };
+    };
+    assert.equal(typeof result?.content, "string");
+    assert.equal(result?.dry_run?.mode, "dry_run");
+    assert.equal(result?.dry_run?.would_sync, true);
+    await runtime.stop();
+  });
+
+  it("Kira triage then consult Neo publishes task.consulted (Phase 27c / DW5)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-kira-consult",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111181";
+    const traceId = "55555555-5555-4555-8555-555555555631";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-kira",
+          trace_id: traceId,
+          goal: "Ticket: prospect demande une demo pricing urgent",
+          consult_neo: true,
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("kira") },
+    );
+
+    const neoEvents = bus.getPublished(agentEventsTopic("neo"));
+    assert.ok(neoEvents.some((e) => e.event_type === "task.consulted"));
+    const consulted = neoEvents.find((e) => e.event_type === "task.consulted")!;
+    assert.equal(consulted.payload.consulted_by, "kira");
+    assert.equal(consulted.payload.agent_id, "neo");
+
+    const kiraCompleted = bus
+      .getPublished(agentEventsTopic("kira"))
+      .find((e) => e.event_type === "task.completed");
+    assert.ok(kiraCompleted);
+    assert.equal(kiraCompleted.payload.status, "completed");
+    assert.ok((kiraCompleted.payload.result as { neo_consult?: unknown })?.neo_consult);
+    await runtime.stop();
+  });
+
+  it("Nyx completes video storyboard golden path without render (Phase 27c)", async () => {
+    const bus = createBus({ backend: "memory" }) as InMemoryBus;
+    const llm = new ManagedLlmAdapter({
+      bus,
+      provider: new FakeProvider(),
+      credentials: { platformApiKey: "test-key" },
+    });
+    const core = createVerseCore({
+      bus,
+      adapters: { ...createNoopAdapters(), llm },
+      kernelBackend: "core",
+    });
+    const runtime = await startAgentRuntime({
+      bus,
+      core,
+      consumerGroup: "test-runtime-nyx",
+    });
+
+    const runId = "11111111-1111-4111-8111-111111111182";
+    const traceId = "55555555-5555-4555-8555-555555555632";
+    await bus.publish(
+      {
+        event_id: crypto.randomUUID(),
+        correlation_id: traceId,
+        causation_id: crypto.randomUUID(),
+        tenant_id: "org-1",
+        workspace_id: "ws-1",
+        run_id: runId,
+        timestamp: new Date().toISOString(),
+        version: "1",
+        event_type: "agent.task",
+        payload: {
+          run_id: runId,
+          step_id: "step-nyx",
+          trace_id: traceId,
+          goal: "Storyboard video lancement produit Verse 30s",
+          duration_s: 30,
+          grants_snapshot: testGrantsSnapshot(),
+          budget_snapshot: testBudgetSnapshot(runId),
+          packages_snapshot: testPackagesSnapshot(),
+        },
+      },
+      { topic: agentTasksTopic("nyx") },
+    );
+
+    const events = bus.getPublished(agentEventsTopic("nyx"));
+    const last = events[events.length - 1]!;
+    assert.equal(last.event_type, "task.completed");
+    assert.equal(last.payload.status, "completed");
+    const result = last.payload.result as {
+      content?: string;
+      storyboard?: unknown[];
+      dry_run?: { mode?: string; would_render?: boolean };
+    };
+    assert.equal(typeof result?.content, "string");
+    assert.ok(Array.isArray(result?.storyboard) && result!.storyboard!.length >= 1);
+    assert.equal(result?.dry_run?.mode, "dry_run");
+    assert.equal(result?.dry_run?.would_render, false);
+    await runtime.stop();
+  });
 });

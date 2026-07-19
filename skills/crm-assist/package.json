@@ -1,8 +1,8 @@
 {
-  "name": "@at72-verse/agent-nyx",
+  "name": "@at72-verse/skill-crm-assist",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent plugin: Nyx (specialist, Phase 27c — storyboard only)",
+  "description": "Skill plugin: crm-assist (Phase 27c)",
   "type": "module",
   "exports": { ".": "./src/index.ts" },
   "scripts": {

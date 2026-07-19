@@ -1,0 +1,10 @@
+{
+  "id": "skill.crm-assist",
+  "version": "0.1.0",
+  "name": "CRM Assist",
+  "description": "Reusable CRM assist via Kernel.",
+  "default_model_profile": "analytic-strict",
+  "tags": ["crm", "sales"],
+  "eval_suite": "evals/crm-assist-v0",
+  "permissions": ["skill.invoke:crm-assist"]
+}

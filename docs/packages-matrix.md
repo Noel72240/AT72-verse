@@ -2,7 +2,7 @@
 
 | # | Case | Expected |
 |---|------|----------|
-| 1 | Full first-party snapshot | adam / nova / orion / astra / pixel / pulse / echo / **nexus** / **vega** + skills/tools installed |
+| 1 | Full first-party snapshot | 12 agents (adam…nyx) + skills/tools installed |
 | 2 | Exclude `pkg.nova` | `assertCapabilityInstalled(nova)` → FORBIDDEN |
 | 3 | Missing `packages_snapshot` | FORBIDDEN (`packages_snapshot_missing`) |
 | 4 | Direct Nova task without install | Runtime fails before `handleTask` |
@@ -16,5 +16,6 @@
 | 12 | Disable Orion grant | Orion refused (`agent_disabled`) |
 | 13 | Pulse + Echo installed (P27a) | social-scheduling / local-presence + dry-run tools |
 | 14 | Nexus + Vega installed (P27b) | automation-plan / watch-brief + http-request dry-run |
+| 15 | Neo + Kira + Nyx installed (P27c) | crm-assist / support-triage / video-brief + dry-run tools |
 
-Automated by `package-install-gate.test.ts`, Runtime DP9/DQ10/P27a/P27b cases, API package routes.
+Automated by `package-install-gate.test.ts`, Runtime DP9/DQ10/P27a/P27b/P27c cases, API package routes.

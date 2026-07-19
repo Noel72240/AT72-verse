@@ -1,5 +1,24 @@
 ﻿{
   "id": "nyx",
-  "version": "0.0.0",
-  "status": "placeholder"
+  "name": "Nyx",
+  "version": "0.1.0",
+  "role": "specialist",
+  "description": "Video storyboard specialist — via skill.video-brief; never renders.",
+  "kind": "specialist",
+  "default_persona": "persona.nyx.default",
+  "skills": ["skill.video-brief"],
+  "tools_allowlist": ["video-pipeline"],
+  "memory_scopes": ["run", "conversation"],
+  "default_model_profile": "creative-balanced",
+  "can_consult": ["nova", "pixel"],
+  "constraints": {
+    "max_tokens_per_run": 50000,
+    "max_tool_calls": 20,
+    "max_skill_invocations": 20,
+    "timeout_ms": 300000
+  },
+  "routing_hints": {
+    "keywords": ["video", "storyboard", "script", "tournage"],
+    "priority": 50
+  }
 }
