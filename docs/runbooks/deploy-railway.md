@@ -53,5 +53,10 @@ With `AUTH_PROVIDER=dev`, the Vercel login page uses DevAuth against your Railwa
 ## Troubleshooting
 
 - Build fails on pnpm → ensure latest commit with Dockerfile is on `master`
+- **CRASHED at start** → open **View logs** ; if migrate fails:
+  1. Prefer Neon **direct** URL (host **without** `-pooler`) as `DATABASE_URL`
+  2. In Neon **SQL Editor**: `CREATE EXTENSION IF NOT EXISTS vector;`
+  3. Settings → Deploy → **clear Custom Start Command** (leave empty; use Dockerfile)
 - Migrate fails on `vector` → Neon SQL Editor → `CREATE EXTENSION IF NOT EXISTS vector;`
+- `/me` 500 after login → same DB/migrate issue; check Railway logs for Prisma errors
 - CORS errors → check `WEB_ORIGIN` matches the exact Vercel URL (https, no trailing slash)

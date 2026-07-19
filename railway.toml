@@ -1,11 +1,9 @@
 # Railway — Nest API (monorepo)
-# Trigger: ensure services deploy from valid TOML + Dockerfile.api
+# Use Dockerfile CMD only — do not set startCommand (it was crashing the service).
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "infra/docker/Dockerfile.api"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
-# Always migrate before listen (in case service overrides image CMD)
-startCommand = "pnpm --filter @at72-verse/db migrate:deploy && pnpm --filter @at72-verse/api start"
+restartPolicyMaxRetries = 5
