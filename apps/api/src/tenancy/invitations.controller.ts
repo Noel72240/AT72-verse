@@ -1,9 +1,20 @@
-import { Body, Controller, Param, Post, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpException,
+  HttpStatus,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import type { OrgRole } from "@at72-verse/db";
 import { AuthGuard } from "../auth/auth.guard.js";
 import type { RequestWithAuth } from "../auth/auth.tokens.js";
+import { checkAuthRateLimit } from "../quotas/rate-limit.redis.js";
 import { RequireOrgRole } from "../rbac/rbac.decorators.js";
 import { RbacGuard } from "../rbac/rbac.guard.js";
+import { clientIp } from "../security/client-ip.js";
 import { InvitationsService } from "./invitations.service.js";
 
 type CreateInvitationBody = {
@@ -33,7 +44,28 @@ export class InvitationsController {
 
   @Post("invitations/:token/accept")
   @UseGuards(AuthGuard)
-  accept(@Req() req: RequestWithAuth, @Param("token") token: string) {
+  async accept(@Req() req: RequestWithAuth & { ip?: string }, @Param("token") token: string) {
+    try {
+      const rl = await checkAuthRateLimit("invite", clientIp(req));
+      if (!rl.allowed) {
+        throw new HttpException(
+          {
+            code: "AUTH_RATE_LIMITED",
+            message: "Invitation accept rate limit exceeded",
+            limit: rl.limit,
+            reset_at: rl.reset_at,
+            retry_after: rl.retry_after_sec,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    } catch (err) {
+      if (err instanceof HttpException) throw err;
+      throw new HttpException(
+        { code: "unavailable", message: "Rate limiter unavailable" },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     return this.invitations.accept(token, req.verseAuth!.user.id, req.verseAuth!.user.email);
   }
 }

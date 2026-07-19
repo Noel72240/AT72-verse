@@ -24,6 +24,17 @@ async function bootstrap(): Promise<void> {
     logger: ["error", "warn", "log"],
   });
 
+  app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-DNS-Prefetch-Control", "off");
+    if (process.env.NODE_ENV === "production") {
+      res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+    }
+    next();
+  });
+
   const webOrigin =
     process.env.WEB_ORIGIN ?? process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "http://localhost:3000";
   app.enableCors({

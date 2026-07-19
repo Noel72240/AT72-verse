@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Phase 33 — Hardening / pentest interne** — **validée PO (2026-07-19)** (`docs/phase-33-decisions.md` · `docs/phase-33-validation.md`) · **Phase 34 = pack décisions dédié** (pas d’auto) · **J5 Platform**
+  - Pack ED\* Accepted (+ **ED5bis** auth RL env · **ED6bis** CSP report-only · **ED8bis** 0 Critical/High)
+  - Threat model · Kernel checklist · IDOR tests · auth rate limit · security headers
+  - CSP report-only + `/csp-report` · backup runbook + drill · pentest interne · `pnpm secrets:check`
+  - **Hors scope 33 :** P34 Stripe · pentest externe · CSP enforce
 - **Phase 32 — Soft delete / audit / export RGPD** — **validée PO (2026-07-19)** (`docs/phase-32-decisions.md` · `docs/phase-32-validation.md`) · **Phase 33 = pack décisions dédié** (pas d’auto)
   - Pack EC\* Accepted (+ **EC6bis** org export métadonnées only · **EC8bis** audit retention ≥365 configurable · **EC10bis** soft-delete → 410)
   - Contracts `0.1.24` : audit / export / retention constants

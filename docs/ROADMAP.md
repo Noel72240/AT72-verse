@@ -578,6 +578,7 @@ Les phases **17–22** et **34–40** poursuivent engines / commercial sous les 
 | **Risques** | Faux sentiment de sécurité · dettes non corrigées |
 | **Critères de validation** | Rapport pentest interne sans critical ouvert · restore DB testé une fois |
 | **Complexité** | **L** |
+| **Statut** | **validée PO (2026-07-19)** — ED\* + ED5bis + ED6bis + ED8bis · **P34 = pack décisions dédié** · **J5 Platform** |
 
 **Jalon J5 atteint — Platform** : plateforme beta sécurisée, multi-agents, intégrations réelles.
 

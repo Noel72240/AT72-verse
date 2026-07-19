@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpException,
+  HttpStatus,
   Inject,
   NotFoundException,
   Post,
@@ -9,6 +10,8 @@ import {
 } from "@nestjs/common";
 import type { AuthProvider } from "@at72-verse/auth";
 import { AuthError } from "@at72-verse/auth";
+import { checkAuthRateLimit } from "../quotas/rate-limit.redis.js";
+import { clientIp } from "../security/client-ip.js";
 import { AUTH_PROVIDER, type RequestWithAuth } from "./auth.tokens.js";
 
 type DevLoginBody = {
@@ -26,12 +29,37 @@ export class AuthController {
    * Dev-only session minting. Disabled when AUTH_PROVIDER=clerk.
    */
   @Post("dev/login")
-  async devLogin(@Body() body: DevLoginBody) {
+  async devLogin(
+    @Req() req: RequestWithAuth & { ip?: string },
+    @Body() body: DevLoginBody,
+  ) {
     if (this.authProvider.name !== "dev" || !this.authProvider.createDevSession) {
       throw new NotFoundException({
         code: "not_found",
         message: "Dev login is only available when AUTH_PROVIDER=dev",
       });
+    }
+
+    try {
+      const rl = await checkAuthRateLimit("login", clientIp(req));
+      if (!rl.allowed) {
+        throw new HttpException(
+          {
+            code: "AUTH_RATE_LIMITED",
+            message: "Authentication rate limit exceeded",
+            limit: rl.limit,
+            reset_at: rl.reset_at,
+            retry_after: rl.retry_after_sec,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    } catch (err) {
+      if (err instanceof HttpException) throw err;
+      throw new HttpException(
+        { code: "unavailable", message: "Rate limiter unavailable" },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
 
     try {
