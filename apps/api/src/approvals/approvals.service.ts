@@ -24,6 +24,7 @@ import { PRISMA } from "../auth/auth.tokens.js";
 import { BUS } from "../core/bus.tokens.js";
 import { VERSE_CORE } from "../core/core.tokens.js";
 import { GrantsService } from "../grants/grants.service.js";
+import { PackagesService } from "../packages/packages.service.js";
 import { RbacService } from "../rbac/rbac.service.js";
 import { publishRunEvent } from "../runs/runs.events.js";
 import { toContractRun } from "../runs/runs.mappers.js";
@@ -36,6 +37,7 @@ export class ApprovalsService implements OnModuleInit {
     @Inject(BUS) private readonly bus: Bus,
     @Inject(RbacService) private readonly rbac: RbacService,
     @Inject(GrantsService) private readonly grants: GrantsService,
+    @Inject(PackagesService) private readonly packages: PackagesService,
   ) {}
 
   onModuleInit(): void {
@@ -116,6 +118,7 @@ export class ApprovalsService implements OnModuleInit {
       run.organizationId,
       run.workspaceId,
     );
+    const packagesSnapshot = await this.packages.snapshotForOrganization(run.organizationId);
     const resume: ApprovalResumePayload = {
       approval_id: approved.id,
       organization_id: approved.organization_id,
@@ -127,6 +130,7 @@ export class ApprovalsService implements OnModuleInit {
       input: approved.input_snapshot,
       trace_id: randomUUID(),
       grants_snapshot: grantsSnapshot,
+      packages_snapshot: packagesSnapshot,
       tools_allowlist: [approved.tool_id],
     };
     await this.bus.publish(

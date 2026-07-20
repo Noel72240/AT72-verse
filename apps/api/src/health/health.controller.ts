@@ -17,7 +17,7 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
-      build: "meta-fb-seed-social-packages",
+      build: "meta-fb-approval-packages-snapshot",
       meta_login_config_id: Boolean(process.env.META_LOGIN_CONFIG_ID?.trim()),
       meta_oauth_scopes: [
         "public_profile",
@@ -45,7 +45,7 @@ export class HealthController {
         organizations,
         memberships,
         packages,
-        build: "meta-fb-seed-social-packages",
+        build: "meta-fb-approval-packages-snapshot",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
