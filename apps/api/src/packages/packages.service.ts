@@ -35,6 +35,16 @@ export class PackagesService {
   async listForOrganization(organizationId: string, userId: string) {
     await this.rbac.requireOrgMember(userId, organizationId);
     await ensureFirstPartyPackageCatalog(this.prisma);
+    const workspaceId = (
+      await this.prisma.workspace.findFirst({
+        where: { organizationId },
+        orderBy: { createdAt: "asc" },
+      })
+    )?.id;
+    if (workspaceId) {
+      // Install any first-party packages added after the org was created (e.g. Pulse / social).
+      await ensureFirstPartyTenantPackages(this.prisma, organizationId, workspaceId);
+    }
     const installs = await listTenantPackages(this.prisma, organizationId);
     return { installs };
   }
@@ -128,6 +138,17 @@ export class PackagesService {
   }
 
   async snapshotForOrganization(organizationId: string) {
+    const workspaceId = (
+      await this.prisma.workspace.findFirst({
+        where: { organizationId },
+        orderBy: { createdAt: "asc" },
+      })
+    )?.id;
+    if (workspaceId) {
+      await ensureFirstPartyTenantPackages(this.prisma, organizationId, workspaceId);
+    } else {
+      await ensureFirstPartyPackageCatalog(this.prisma);
+    }
     return buildPackagesSnapshot(this.prisma, organizationId);
   }
 
