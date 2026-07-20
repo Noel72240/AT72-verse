@@ -9,6 +9,7 @@ import {
   handleTask,
   isLivePublishIntent,
   isPublishIntent,
+  looksLikePublishInstruction,
   parseAdamLlmPlan,
 } from "./index.js";
 
@@ -187,6 +188,16 @@ describe("agent-adam Phase 15/24", () => {
   it("extractPublishDraft reads ---DRAFT--- marker", () => {
     const draft = extractPublishDraft("publie\n\n---DRAFT---\nHello LinkedIn world from Verse");
     assert.equal(draft, "Hello LinkedIn world from Verse");
+  });
+
+  it("looksLikePublishInstruction detects write-then-publish", () => {
+    assert.equal(
+      looksLikePublishInstruction(
+        "Rédige un court post Facebook pour AlloTech72, puis publie en live sur facebook",
+      ),
+      true,
+    );
+    assert.equal(looksLikePublishInstruction("Hello AlloTech72 #IA #SaaS"), false);
   });
 
   it("isPublishIntent detects French publish verbs", () => {

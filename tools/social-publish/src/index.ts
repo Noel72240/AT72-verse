@@ -239,8 +239,16 @@ async function publishFacebookPagePost(input: {
     body,
   });
   if (!res.ok) {
-    throw new KernelError("PROVIDER_ERROR", "Facebook Page feed publish failed", {
-      details: { status: res.status },
+    const errBody = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string; code?: number; type?: string };
+    };
+    const fbMsg = errBody.error?.message ?? `HTTP ${res.status}`;
+    throw new KernelError("PROVIDER_ERROR", `Facebook Page feed publish failed: ${fbMsg}`, {
+      details: {
+        status: res.status,
+        facebook_error: errBody.error?.message ?? null,
+        facebook_code: errBody.error?.code ?? null,
+      },
       retryable: res.status === 429,
     });
   }

@@ -357,7 +357,15 @@ export class ToolRuntime {
         });
       }
 
-      let oauth: { provider: string; access_token: string } | undefined;
+      let oauth:
+        | {
+            provider: string;
+            access_token: string;
+            page_id?: string;
+            page_name?: string;
+            ig_user_id?: string;
+          }
+        | undefined;
 
       if (wantsLive) {
         if (spec.auth?.type !== "oauth") {

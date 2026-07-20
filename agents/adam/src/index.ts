@@ -129,13 +129,24 @@ function isSimpleWritingGoal(goal: string): boolean {
 }
 
 const PUBLISH_CTA =
-  "\n\n---\nPour publier : dis « publie » (simulation) ou « publie en live » (après connexion sur /connectors — LinkedIn live OK ; Facebook/Instagram : connexion OK, live bientôt).";
+  "\n\n---\nPour publier : dis « publie » (simulation) ou « publie en live » (Facebook Page / LinkedIn après /connectors).";
 
 function detectPublishPlatform(goal: string): "linkedin" | "facebook" | "instagram" {
   const g = goal.toLowerCase();
   if (/\binstagram\b|\binsta\b/.test(g)) return "instagram";
   if (/\bfacebook\b|\bfb\b/.test(g)) return "facebook";
   return "linkedin";
+}
+
+/** True when the "draft" is still a writing instruction, not post body. */
+export function looksLikePublishInstruction(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  if (/\bpuis\s+publie\b/.test(t)) return true;
+  return (
+    /\b(rédige|redige|écris|ecris|write|prépare|prepare)\b/.test(t) &&
+    /\b(publie|publish|poste[rz]?)\b/.test(t)
+  );
 }
 
 async function directWriteReply(
@@ -218,7 +229,24 @@ async function publishViaPulse(
   const platformLabel =
     platform === "linkedin" ? "LinkedIn" : platform === "facebook" ? "Facebook" : "Instagram";
 
-  const draft = extractPublishDraft(goal);
+  let draft = extractPublishDraft(goal);
+  if (!draft || looksLikePublishInstruction(goal) || looksLikePublishInstruction(draft)) {
+    // "Rédige … puis publie en live" → write a real post body first, then publish it.
+    if (looksLikePublishInstruction(goal) || (draft && looksLikePublishInstruction(draft))) {
+      const written = await ctx.kernel.llm.complete({
+        profile: "fast-cheap",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Tu es un copywriter social media. Écris uniquement le post demandé, prêt à publier (emojis/hashtags OK). Pas d'intro du type « Voici un post ». Sois concis.",
+          },
+          { role: "user", content: goal },
+        ],
+      });
+      draft = written.content?.trim() || null;
+    }
+  }
   if (!draft) {
     return {
       plan: {
@@ -274,11 +302,30 @@ async function publishViaPulse(
           resolved_persona: resolved,
         };
       }
+      if (/META_PAGE_REQUIRED|No Facebook Page selected/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content:
+              "Aucune Page Facebook sélectionnée. Va sur /connectors, choisis AlloTech72, puis réessaie « publie en live ».",
+          },
+          resolved_persona: resolved,
+        };
+      }
       if (/LIVE_PUBLISH_PLATFORM_PENDING|not available yet|NOT_IMPLEMENTED/i.test(err)) {
         return {
           plan,
           result: {
             content: `${platformLabel} est connectable, mais la publication live arrive bientôt. Tu peux utiliser « publie » (simulation) ou LinkedIn pour le live.`,
+          },
+          resolved_persona: resolved,
+        };
+      }
+      if (/PROVIDER_ERROR|Facebook Page feed|feed publish failed/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content: `Meta a refusé la publication : ${err}. Vérifie les permissions Pages sur Meta, puis reconnecte sur /connectors.`,
           },
           resolved_persona: resolved,
         };
@@ -324,6 +371,16 @@ async function publishViaPulse(
         result: {
           content:
             "La publication attend une approbation humaine. Ouvre /approvals pour valider ou refuser.",
+        },
+        resolved_persona: resolved,
+      };
+    }
+    if (/META_PAGE_REQUIRED|No Facebook Page selected/i.test(msg)) {
+      return {
+        plan,
+        result: {
+          content:
+            "Aucune Page Facebook sélectionnée. Va sur /connectors, choisis AlloTech72, puis réessaie « publie en live ».",
         },
         resolved_persona: resolved,
       };
