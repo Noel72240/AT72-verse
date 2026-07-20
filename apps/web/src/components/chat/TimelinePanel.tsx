@@ -57,6 +57,13 @@ function StepNode({ node, depth }: { node: TimelineNode; depth: number }) {
       <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
         {step.agent_id ? `agent : ${step.agent_id}` : step.kind}
       </div>
+      {step.status === "failed" && step.output?.error ? (
+        <div style={{ color: "var(--danger, #c44)", fontSize: "0.8rem", marginTop: "0.25rem" }}>
+          {typeof step.output.error === "string"
+            ? step.output.error
+            : JSON.stringify(step.output.error)}
+        </div>
+      ) : null}
       {approvalId ? (
         <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
           validation : <code>{approvalId}</code>

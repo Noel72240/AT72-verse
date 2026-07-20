@@ -655,7 +655,13 @@ export class RunsService {
           output: asJson({ error: payload.error ?? "agent failed" }),
         },
       });
-      if (run.status === "queued" || run.status === "running" || run.status === "waiting_approval") {
+      // Only fail the whole run for the root agent. Delegated children (Pulse, etc.)
+      // return failure to Adam, who may recover with a user-facing message.
+      const isRootStep = parentStep.parentStepId === null;
+      if (
+        isRootStep &&
+        (run.status === "queued" || run.status === "running" || run.status === "waiting_approval")
+      ) {
         const updated = await this.prisma.run.update({
           where: { id: run.id },
           data: {
