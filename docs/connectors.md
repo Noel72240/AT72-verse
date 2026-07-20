@@ -15,6 +15,7 @@
 | `LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` | Real LinkedIn app |
 | `META_APP_ID` / `META_APP_SECRET` | Meta app (Facebook Login + Instagram Graph) |
 | `META_LOGIN_CONFIG_ID` | Facebook Login for Business configuration ID (permissions bundle) |
+| `VERSE_IG_DEFAULT_IMAGE_URL` | Optional default public HTTPS image for Instagram live posts |
 | `CONNECTORS_REDIRECT_URI` | Shared OAuth callback (preferred) |
 | `LINKEDIN_REDIRECT_URI` | Fallback redirect (legacy) |
 | Redirect default | `{API_PUBLIC_URL}/connectors/oauth/callback` |

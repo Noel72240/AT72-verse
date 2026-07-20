@@ -17,8 +17,9 @@ export class HealthController {
       status: "ok",
       service: "at72-verse-api",
       phase: 14,
-      build: "meta-fb-approval-packages-snapshot",
+      build: "meta-instagram-live-publish",
       meta_login_config_id: Boolean(process.env.META_LOGIN_CONFIG_ID?.trim()),
+      meta_ig_default_image: Boolean(process.env.VERSE_IG_DEFAULT_IMAGE_URL?.trim()),
       meta_oauth_scopes: [
         "public_profile",
         "business_management",
@@ -45,7 +46,7 @@ export class HealthController {
         organizations,
         memberships,
         packages,
-        build: "meta-fb-approval-packages-snapshot",
+        build: "meta-instagram-live-publish",
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

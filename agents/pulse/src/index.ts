@@ -65,6 +65,7 @@ export async function handleTask(ctx: PulseHandleTaskContext): Promise<PulseHand
     platform?: string;
     mode?: string;
     publish_as_is?: boolean;
+    image_url?: string;
   };
 
   const invoked = await ctx.kernel.skills.invoke({
@@ -76,6 +77,9 @@ export async function handleTask(ctx: PulseHandleTaskContext): Promise<PulseHand
         ? { mode: taskFlags.mode }
         : {}),
       ...(taskFlags.publish_as_is === true ? { publish_as_is: true } : {}),
+      ...(typeof taskFlags.image_url === "string" && taskFlags.image_url.startsWith("https://")
+        ? { image_url: taskFlags.image_url }
+        : {}),
       ...(formality ? { formality } : {}),
       ...(rules ? { rules } : {}),
     },

@@ -37,7 +37,7 @@ const PROVIDERS = [
   {
     id: "instagram" as const,
     label: "Instagram",
-    hint: "Compte Pro lié à la Page Facebook AlloTech72. Live texte FB d’abord ; IG media ensuite.",
+    hint: "Compte Pro lié à la Page Facebook AlloTech72. Live IG = caption + image URL publique (https://…jpg).",
   },
 ];
 

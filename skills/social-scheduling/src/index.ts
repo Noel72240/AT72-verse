@@ -25,6 +25,7 @@ export const SOCIAL_SCHEDULING_SKILL_SPEC: SkillSpec = {
       mode: { type: "string", enum: ["dry_run", "live"] },
       /** When true, treat brief as final post body (skip LLM rewrite). */
       publish_as_is: { type: "boolean" },
+      image_url: { type: "string" },
     },
   },
   output_schema: {
@@ -81,6 +82,10 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
       : null;
   const mode = ctx.input.mode === "live" ? "live" : "dry_run";
   const publishAsIs = ctx.input.publish_as_is === true;
+  const imageUrl =
+    typeof ctx.input.image_url === "string" && ctx.input.image_url.trim().startsWith("https://")
+      ? ctx.input.image_url.trim()
+      : undefined;
 
   const postBody = brief.slice(0, 3000);
 
@@ -91,6 +96,7 @@ export async function execute(ctx: SkillExecuteContext): Promise<Record<string, 
       content: postBody,
       ...(mode === "dry_run" ? { scheduled_at: "2026-07-20T09:00:00.000Z" } : {}),
       mode,
+      ...(imageUrl ? { image_url: imageUrl } : {}),
     },
   });
 

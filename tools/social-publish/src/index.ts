@@ -9,9 +9,9 @@ export const TOOL_ID = "social-publish" as const;
 
 export const SOCIAL_PUBLISH_TOOL_SPEC: ToolSpec = {
   id: TOOL_ID,
-  version: "0.2.0",
+  version: "0.3.0",
   description:
-    "Publish a social post. Default dry-run; mode=live requires Core-injected OAuth (LinkedIn).",
+    "Publish a social post. Default dry-run; mode=live requires Core-injected OAuth (LinkedIn / Facebook Page / Instagram).",
   input_schema: {
     type: "object",
     additionalProperties: false,
@@ -21,6 +21,8 @@ export const SOCIAL_PUBLISH_TOOL_SPEC: ToolSpec = {
       content: { type: "string", minLength: 1 },
       scheduled_at: { type: "string" },
       mode: { type: "string", enum: ["dry_run", "live"] },
+      /** Required for live Instagram (public HTTPS image Meta can fetch). */
+      image_url: { type: "string" },
     },
   },
   output_schema: {
@@ -36,11 +38,12 @@ export const SOCIAL_PUBLISH_TOOL_SPEC: ToolSpec = {
       scheduled_at: { type: "string" },
       external_post_id: { type: "string" },
       published_at: { type: "string" },
+      image_url: { type: "string" },
     },
   },
   side_effect: true,
   auth: { type: "oauth" },
-  timeout_ms: 15000,
+  timeout_ms: 60000,
   permission: "tool.execute:social-publish",
   categories: ["social"],
   package: { kind: "tool", package_id: "pkg.tool.social-publish" },
@@ -204,11 +207,28 @@ export async function execute(ctx: ToolExecuteContext): Promise<Record<string, u
         { details: { code: "IG_USER_REQUIRED" } },
       );
     }
-    throw new KernelError(
-      "NOT_IMPLEMENTED",
-      "Live Instagram publish needs an image URL (Graph API). Facebook Page text posts work now — IG media publish arrives next.",
-      { details: { code: "IG_MEDIA_REQUIRED", ig_user_id: igUserId } },
-    );
+    const imageUrl = resolveInstagramImageUrl(ctx.input, content);
+    if (!imageUrl) {
+      throw new KernelError(
+        "INVALID_INPUT",
+        "Instagram live needs a public image URL (https://…). Add one in the message or set VERSE_IG_DEFAULT_IMAGE_URL.",
+        { details: { code: "IG_MEDIA_REQUIRED", ig_user_id: igUserId } },
+      );
+    }
+    const published = await publishInstagramFeedPost({
+      access_token: token,
+      ig_user_id: igUserId,
+      caption: content,
+      image_url: imageUrl,
+    });
+    return {
+      mode: "live",
+      published: true,
+      platform: "instagram",
+      external_post_id: published.external_post_id,
+      published_at: new Date().toISOString(),
+      image_url: imageUrl,
+    };
   }
 
   throw new KernelError(
@@ -216,6 +236,23 @@ export async function execute(ctx: ToolExecuteContext): Promise<Record<string, u
     `Live social-publish for ${platform} is not available yet`,
     { details: { platform, code: "LIVE_PUBLISH_PLATFORM_PENDING" } },
   );
+}
+
+/** Prefer explicit input, then URL in caption, then env default. */
+export function resolveInstagramImageUrl(
+  input: Record<string, unknown>,
+  content: string,
+): string | null {
+  const fromInput =
+    typeof input.image_url === "string" && input.image_url.trim().startsWith("https://")
+      ? input.image_url.trim()
+      : null;
+  if (fromInput) return fromInput;
+  const fromContent = content.match(/https:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|webp)(?:\?[^\s<>"']*)?/i);
+  if (fromContent?.[0]) return fromContent[0];
+  const fromEnv = process.env.VERSE_IG_DEFAULT_IMAGE_URL?.trim();
+  if (fromEnv?.startsWith("https://")) return fromEnv;
+  return null;
 }
 
 async function publishFacebookPagePost(input: {
@@ -254,6 +291,101 @@ async function publishFacebookPagePost(input: {
   }
   const json = (await res.json()) as { id?: string };
   return { external_post_id: json.id ?? `fb_${Date.now()}` };
+}
+
+async function publishInstagramFeedPost(input: {
+  access_token: string;
+  ig_user_id: string;
+  caption: string;
+  image_url: string;
+  fetchImpl?: typeof fetch;
+}): Promise<{ external_post_id: string }> {
+  if (isStubToken(input.access_token) || input.ig_user_id.startsWith("stub-")) {
+    return { external_post_id: `ig_stub_${Date.now()}` };
+  }
+  const fetchImpl = input.fetchImpl ?? globalThis.fetch.bind(globalThis);
+
+  const createUrl = new URL(
+    `https://graph.facebook.com/v21.0/${encodeURIComponent(input.ig_user_id)}/media`,
+  );
+  const createBody = new URLSearchParams({
+    image_url: input.image_url,
+    caption: input.caption.slice(0, 2200),
+    access_token: input.access_token,
+  });
+  const createRes = await fetchImpl(createUrl.toString(), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: createBody,
+  });
+  const createJson = (await createRes.json().catch(() => ({}))) as {
+    id?: string;
+    error?: { message?: string; code?: number };
+  };
+  if (!createRes.ok || !createJson.id) {
+    const msg = createJson.error?.message ?? `HTTP ${createRes.status}`;
+    throw new KernelError("PROVIDER_ERROR", `Instagram media container failed: ${msg}`, {
+      details: {
+        status: createRes.status,
+        facebook_error: createJson.error?.message ?? null,
+        facebook_code: createJson.error?.code ?? null,
+      },
+      retryable: createRes.status === 429,
+    });
+  }
+
+  const creationId = createJson.id;
+  // Meta requires FINISHED before media_publish (error 9007 otherwise).
+  for (let i = 0; i < 12; i++) {
+    const statusUrl = new URL(`https://graph.facebook.com/v21.0/${encodeURIComponent(creationId)}`);
+    statusUrl.searchParams.set("fields", "status_code");
+    statusUrl.searchParams.set("access_token", input.access_token);
+    const statusRes = await fetchImpl(statusUrl.toString());
+    const statusJson = (await statusRes.json().catch(() => ({}))) as {
+      status_code?: string;
+      error?: { message?: string };
+    };
+    const code = statusJson.status_code ?? "UNKNOWN";
+    if (code === "FINISHED") break;
+    if (code === "ERROR" || code === "EXPIRED") {
+      throw new KernelError(
+        "PROVIDER_ERROR",
+        `Instagram media container ${code}: ${statusJson.error?.message ?? "processing failed"}`,
+        { details: { creation_id: creationId, status_code: code } },
+      );
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+
+  const publishUrl = new URL(
+    `https://graph.facebook.com/v21.0/${encodeURIComponent(input.ig_user_id)}/media_publish`,
+  );
+  const publishBody = new URLSearchParams({
+    creation_id: creationId,
+    access_token: input.access_token,
+  });
+  const publishRes = await fetchImpl(publishUrl.toString(), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: publishBody,
+  });
+  const publishJson = (await publishRes.json().catch(() => ({}))) as {
+    id?: string;
+    error?: { message?: string; code?: number };
+  };
+  if (!publishRes.ok || !publishJson.id) {
+    const msg = publishJson.error?.message ?? `HTTP ${publishRes.status}`;
+    throw new KernelError("PROVIDER_ERROR", `Instagram media_publish failed: ${msg}`, {
+      details: {
+        status: publishRes.status,
+        facebook_error: publishJson.error?.message ?? null,
+        facebook_code: publishJson.error?.code ?? null,
+        creation_id: creationId,
+      },
+      retryable: publishRes.status === 429,
+    });
+  }
+  return { external_post_id: publishJson.id };
 }
 
 export const packageName = "@at72-verse/tool-social-publish" as const;

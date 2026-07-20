@@ -129,13 +129,18 @@ function isSimpleWritingGoal(goal: string): boolean {
 }
 
 const PUBLISH_CTA =
-  "\n\n---\nPour publier : dis « publie » (simulation) ou « publie en live » (Facebook Page / LinkedIn après /connectors).";
+  "\n\n---\nPour publier : dis « publie » (simulation) ou « publie en live » (Facebook / Instagram / LinkedIn après /connectors). Instagram live = caption + URL image https://…jpg/png.";
 
 function detectPublishPlatform(goal: string): "linkedin" | "facebook" | "instagram" {
   const g = goal.toLowerCase();
   if (/\binstagram\b|\binsta\b/.test(g)) return "instagram";
   if (/\bfacebook\b|\bfb\b/.test(g)) return "facebook";
   return "linkedin";
+}
+
+function extractImageUrl(text: string): string | null {
+  const m = text.match(/https:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|webp)(?:\?[^\s<>"']*)?/i);
+  return m?.[0] ?? null;
 }
 
 /** True when the "draft" is still a writing instruction, not post body. */
@@ -261,6 +266,21 @@ async function publishViaPulse(
   }
 
   const mode: "dry_run" | "live" = isLivePublishIntent(goal) ? "live" : "dry_run";
+  const imageUrl = extractImageUrl(goal) ?? extractImageUrl(draft);
+
+  if (mode === "live" && platform === "instagram" && !imageUrl && !process.env.VERSE_IG_DEFAULT_IMAGE_URL) {
+    return {
+      plan: {
+        version: "1",
+        steps: [{ name: "publish_need_image", kind: "act", agent_id: ADAM_AGENT_ID }],
+      },
+      result: {
+        content:
+          "Instagram exige une image publique (URL https://…jpg/png). Colle une URL d'image dans le message, ou configure VERSE_IG_DEFAULT_IMAGE_URL sur Railway, puis réessaie « publie en live ».",
+      },
+      resolved_persona: resolved,
+    };
+  }
 
   await ctx.kernel.memory.remember({
     scope: "run.working",
@@ -278,6 +298,7 @@ async function publishViaPulse(
         mode,
         platform,
         publish_as_is: true,
+        ...(imageUrl ? { image_url: imageUrl } : {}),
       },
     });
 
@@ -312,20 +333,40 @@ async function publishViaPulse(
           resolved_persona: resolved,
         };
       }
-      if (/LIVE_PUBLISH_PLATFORM_PENDING|not available yet|NOT_IMPLEMENTED/i.test(err)) {
+      if (/IG_MEDIA_REQUIRED|image URL|VERSE_IG_DEFAULT/i.test(err)) {
         return {
           plan,
           result: {
-            content: `${platformLabel} est connectable, mais la publication live arrive bientôt. Tu peux utiliser « publie » (simulation) ou LinkedIn pour le live.`,
+            content:
+              "Instagram exige une image publique (URL https://…jpg/png). Colle l'URL dans le message avec « publie en live », ou configure VERSE_IG_DEFAULT_IMAGE_URL.",
           },
           resolved_persona: resolved,
         };
       }
-      if (/PROVIDER_ERROR|Facebook Page feed|feed publish failed/i.test(err)) {
+      if (/IG_USER_REQUIRED|Instagram Business/i.test(err)) {
         return {
           plan,
           result: {
-            content: `Meta a refusé la publication : ${err}. Vérifie les permissions Pages sur Meta, puis reconnecte sur /connectors.`,
+            content:
+              "Aucun compte Instagram Pro lié à la Page. Sur /connectors, choisis AlloTech72 (avec IG lié), puis réessaie.",
+          },
+          resolved_persona: resolved,
+        };
+      }
+      if (/LIVE_PUBLISH_PLATFORM_PENDING|not available yet|NOT_IMPLEMENTED/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content: `${platformLabel} est connectable, mais la publication live arrive bientôt. Tu peux utiliser « publie » (simulation) ou Facebook pour le live.`,
+          },
+          resolved_persona: resolved,
+        };
+      }
+      if (/PROVIDER_ERROR|Facebook Page feed|Instagram media|feed publish failed/i.test(err)) {
+        return {
+          plan,
+          result: {
+            content: `Meta a refusé la publication : ${err}. Vérifie les permissions / l'URL d'image, puis reconnecte sur /connectors si besoin.`,
           },
           resolved_persona: resolved,
         };

@@ -41,6 +41,30 @@ describe("social-publish Phase 28b", () => {
     }
   });
 
+  it("live Instagram stub publishes with image_url", async () => {
+    const out = await execute({
+      input: {
+        platform: "instagram",
+        content: "Hello IG",
+        mode: "live",
+        image_url: "https://example.com/photo.jpg",
+      },
+      organization_id: "o",
+      workspace_id: "w",
+      run_id: "r",
+      agent_id: "pulse",
+      oauth: {
+        provider: "instagram",
+        access_token: "stub-access-ig",
+        ig_user_id: "stub-ig-1",
+      },
+    });
+    assert.equal(out.mode, "live");
+    assert.equal(out.published, true);
+    assert.equal(out.platform, "instagram");
+    assert.match(String(out.external_post_id), /^ig_stub_/);
+  });
+
   it("live without oauth throws CONNECTOR_NOT_CONNECTED", async () => {
     await assert.rejects(
       () =>
